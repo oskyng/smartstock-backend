@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UsuarioServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">smartstock-auth-service</a> &gt; <a href="index.source.html" class="el_package">com.osanzana.smartstock.auth.autenticacion.services</a> &gt; <span class="el_source">UsuarioServiceImpl.java</span></div><h1>UsuarioServiceImpl.java</h1><pre class="source lang-java linenums">package com.osanzana.smartstock.auth.autenticacion.services;
+
+import com.osanzana.smartstock.auth.core.entities.Rol;
+import com.osanzana.smartstock.auth.core.entities.Usuario;
+import com.osanzana.smartstock.auth.core.repositories.RolRepository;
+import com.osanzana.smartstock.auth.core.repositories.UsuarioRepository;
+import com.osanzana.smartstock.auth.core.entities.Comercio;
+import com.osanzana.smartstock.auth.core.repositories.ComercioRepository;
+import com.osanzana.smartstock.auth.shared.dto.request.UsuarioRequestDTO;
+import com.osanzana.smartstock.auth.shared.dto.response.UsuarioResponseDTO;
+import com.osanzana.smartstock.auth.shared.exception.BusinessException;
+import com.osanzana.smartstock.auth.shared.exception.ConflictException;
+import com.osanzana.smartstock.auth.shared.exception.ResourceNotFoundException;
+import com.osanzana.smartstock.auth.shared.exception.UnauthorizedActionException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+<span class="fc" id="L23">@Slf4j</span>
+public class UsuarioServiceImpl implements UsuarioService {
+
+    private final UsuarioRepository usuarioRepository;
+    private final RolRepository rolRepository;
+    private final ComercioRepository comercioRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Override
+    @Transactional
+    public UsuarioResponseDTO crearUsuario(UsuarioRequestDTO dto, Long idComercioContexto, String rolSolicitante) {
+<span class="fc" id="L34">        log.info(&quot;Intento de creación de usuario: email={}, rut={}, solicitante={}, contextoComercio={}&quot;, </span>
+<span class="fc" id="L35">                dto.getEmail(), dto.getRut(), rolSolicitante, idComercioContexto);</span>
+
+        // 1. Verificar duplicados
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (usuarioRepository.findByEmail(dto.getEmail()).isPresent()) {</span>
+<span class="fc" id="L39">            throw new ConflictException(&quot;El email ya existe en el sistema.&quot;);</span>
+        }
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (usuarioRepository.findByRut(dto.getRut()).isPresent()) {</span>
+<span class="fc" id="L42">            throw new ConflictException(&quot;El RUT ya existe en el sistema.&quot;);</span>
+        }
+
+        // 2. Obtener Rol
+<span class="fc" id="L46">        Rol rol = rolRepository.findById(dto.getIdRol())</span>
+<span class="fc" id="L47">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Rol con ID &quot; + dto.getIdRol() + &quot; no encontrado.&quot;));</span>
+
+        // 3. Control Multi-tenant (RBAC)
+<span class="fc" id="L50">        Long idComercioFinal = null;</span>
+        
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (&quot;GERENTE_TIENDA&quot;.equals(rolSolicitante)) {</span>
+            // Forzar comercio del gerente
+<span class="fc" id="L54">            idComercioFinal = idComercioContexto;</span>
+            // Validar roles permitidos
+<span class="pc bpc" id="L56" title="1 of 4 branches missed.">            if (!&quot;OPERADOR_INVENTARIO&quot;.equals(rol.getNombre()) &amp;&amp; !&quot;REPONEDOR_SALA&quot;.equals(rol.getNombre())) {</span>
+<span class="fc" id="L57">                throw new UnauthorizedActionException(&quot;El Gerente solo puede crear roles OPERADOR_INVENTARIO o REPONEDOR_SALA.&quot;);</span>
+            }
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        } else if (&quot;ADMIN_SISTEMA&quot;.equals(rolSolicitante)) {</span>
+            // ADMIN_SISTEMA permite cualquier rol y comercio provisto en DTO
+            // REGLA: Si el rol es ADMIN_SISTEMA, el comercio DEBE ser NULL
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">            if (&quot;ADMIN_SISTEMA&quot;.equals(rol.getNombre())) {</span>
+<span class="nc" id="L63">                idComercioFinal = null;</span>
+            } else {
+<span class="fc" id="L65">                idComercioFinal = dto.getIdComercio();</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">                if (idComercioFinal == null) {</span>
+<span class="nc" id="L67">                    throw new BusinessException(&quot;Los roles locales deben tener un ID de comercio asociado.&quot;);</span>
+                }
+            }
+        } else {
+<span class="fc" id="L71">            throw new UnauthorizedActionException(&quot;El rol solicitante no tiene permisos para crear usuarios.&quot;);</span>
+        }
+
+        // 4. Obtener Entidad Comercio si aplica
+<span class="fc" id="L75">        Comercio comercio = null;</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        if (idComercioFinal != null) {</span>
+<span class="fc" id="L77">            Long finalId = idComercioFinal;</span>
+<span class="fc" id="L78">            comercio = comercioRepository.findById(finalId)</span>
+<span class="pc" id="L79">                    .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Comercio con ID &quot; + finalId + &quot; no encontrado.&quot;));</span>
+        }
+
+        // 5. Mapear y persistir (BCrypt) con Builder
+<span class="fc" id="L83">        Usuario usuario = Usuario.builder()</span>
+<span class="fc" id="L84">                .rut(dto.getRut())</span>
+<span class="fc" id="L85">                .nombre(dto.getNombre())</span>
+<span class="fc" id="L86">                .apellido(dto.getApellido())</span>
+<span class="fc" id="L87">                .email(dto.getEmail())</span>
+<span class="fc" id="L88">                .passwordHash(passwordEncoder.encode(dto.getPassword()))</span>
+<span class="fc" id="L89">                .rol(rol)</span>
+<span class="fc" id="L90">                .comercio(comercio)</span>
+<span class="fc" id="L91">                .activo(1)</span>
+<span class="fc" id="L92">                .build();</span>
+
+<span class="fc" id="L94">        Usuario guardado = usuarioRepository.save(usuario);</span>
+<span class="fc" id="L95">        log.info(&quot;Usuario creado exitosamente: ID={}&quot;, guardado.getId());</span>
+
+<span class="fc" id="L97">        return mapToResponseDTO(guardado);</span>
+    }
+
+    private UsuarioResponseDTO mapToResponseDTO(Usuario usuario) {
+<span class="fc" id="L101">        return UsuarioResponseDTO.builder()</span>
+<span class="fc" id="L102">                .id(usuario.getId())</span>
+<span class="fc" id="L103">                .rut(usuario.getRut())</span>
+<span class="fc" id="L104">                .nombre(usuario.getNombre())</span>
+<span class="fc" id="L105">                .apellido(usuario.getApellido())</span>
+<span class="fc" id="L106">                .email(usuario.getEmail())</span>
+<span class="fc" id="L107">                .rol(usuario.getRol().getNombre())</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">                .idComercio(usuario.getComercio() != null ? usuario.getComercio().getId() : null)</span>
+<span class="fc" id="L109">                .activo(usuario.getActivo())</span>
+<span class="fc" id="L110">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

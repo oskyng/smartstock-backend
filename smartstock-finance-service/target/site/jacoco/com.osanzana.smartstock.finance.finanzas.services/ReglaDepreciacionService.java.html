@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReglaDepreciacionService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">smartstock-finance-service</a> &gt; <a href="index.source.html" class="el_package">com.osanzana.smartstock.finance.finanzas.services</a> &gt; <span class="el_source">ReglaDepreciacionService.java</span></div><h1>ReglaDepreciacionService.java</h1><pre class="source lang-java linenums">package com.osanzana.smartstock.finance.finanzas.services;
+
+import com.osanzana.smartstock.finance.core.entities.Usuario;
+import com.osanzana.smartstock.finance.core.repositories.UsuarioRepository;
+import com.osanzana.smartstock.finance.core.entities.Comercio;
+import com.osanzana.smartstock.finance.core.repositories.ComercioRepository;
+import com.osanzana.smartstock.finance.core.entities.ReglaDepreciacion;
+import com.osanzana.smartstock.finance.finanzas.repositories.ReglaDepreciacionRepository;
+import com.osanzana.smartstock.finance.core.entities.Categoria;
+import com.osanzana.smartstock.finance.core.repositories.CategoriaRepository;
+import com.osanzana.smartstock.finance.shared.dto.request.ReglaDepreciacionRequestDTO;
+import com.osanzana.smartstock.finance.shared.dto.response.ReglaDepreciacionResponseDTO;
+import com.osanzana.smartstock.finance.shared.exception.ResourceNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class ReglaDepreciacionService {
+
+    private final ReglaDepreciacionRepository reglaRepository;
+    private final CategoriaRepository categoriaRepository;
+    private final ComercioRepository comercioRepository;
+    private final UsuarioRepository usuarioRepository;
+
+    public List&lt;ReglaDepreciacionResponseDTO&gt; listarPorComercio(Long comercioId) {
+<span class="nc" id="L31">        return reglaRepository.findByComercioId(comercioId).stream()</span>
+<span class="nc" id="L32">                .map(this::mapToResponseDTO)</span>
+<span class="nc" id="L33">                .collect(Collectors.toList());</span>
+    }
+
+    @Transactional
+    public ReglaDepreciacionResponseDTO guardar(ReglaDepreciacionRequestDTO dto, Long comercioId, String emailGerente) {
+<span class="nc" id="L38">        Categoria categoria = categoriaRepository.findById(dto.getIdCategoria())</span>
+<span class="nc" id="L39">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Categoría no encontrada&quot;));</span>
+        
+<span class="nc" id="L41">        Comercio comercio = comercioRepository.findById(comercioId)</span>
+<span class="nc" id="L42">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Comercio no encontrado&quot;));</span>
+
+<span class="nc" id="L44">        Usuario gerente = usuarioRepository.findByEmail(emailGerente)</span>
+<span class="nc" id="L45">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Usuario gerente no encontrado&quot;));</span>
+
+<span class="nc" id="L47">        ReglaDepreciacion regla = ReglaDepreciacion.builder()</span>
+<span class="nc" id="L48">                .categoria(categoria)</span>
+<span class="nc" id="L49">                .diasCriticosMin(dto.getDiasCriticosMin())</span>
+<span class="nc" id="L50">                .porcentajeDescuento(dto.getPorcentajeDescuento())</span>
+<span class="nc" id="L51">                .comercio(comercio)</span>
+<span class="nc" id="L52">                .gerente(gerente)</span>
+<span class="nc" id="L53">                .activa(1)</span>
+<span class="nc" id="L54">                .build();</span>
+
+<span class="nc" id="L56">        return mapToResponseDTO(reglaRepository.save(regla));</span>
+    }
+
+    @Transactional
+    public void eliminar(Long id) {
+<span class="nc" id="L61">        ReglaDepreciacion regla = reglaRepository.findById(id)</span>
+<span class="nc" id="L62">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Regla no encontrada&quot;));</span>
+<span class="nc" id="L63">        reglaRepository.delete(regla);</span>
+<span class="nc" id="L64">    }</span>
+
+    private ReglaDepreciacionResponseDTO mapToResponseDTO(ReglaDepreciacion regla) {
+<span class="nc" id="L67">        return ReglaDepreciacionResponseDTO.builder()</span>
+<span class="nc" id="L68">                .id(regla.getId())</span>
+<span class="nc" id="L69">                .nombreCategoria(regla.getCategoria().getNombre())</span>
+<span class="nc" id="L70">                .diasCriticosMin(regla.getDiasCriticosMin())</span>
+<span class="nc" id="L71">                .porcentajeDescuento(regla.getPorcentajeDescuento())</span>
+<span class="nc" id="L72">                .nombreGerente(regla.getGerente().getNombre() + &quot; &quot; + regla.getGerente().getApellido())</span>
+<span class="nc" id="L73">                .activa(regla.getActiva())</span>
+<span class="nc" id="L74">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

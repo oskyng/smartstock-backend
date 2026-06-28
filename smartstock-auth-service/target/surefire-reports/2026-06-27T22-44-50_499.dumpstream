@@ -1,0 +1,5 @@
+# Created at 2026-06-27T22:44:50.764
+Boot Manifest-JAR contains absolute paths in classpath 'E:\Duoc\SmartStock\smartstock-backend\smartstock-auth-service\target\test-classes'
+Hint: <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+'other' has different root
+

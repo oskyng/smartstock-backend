@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DescuentoProximidadStrategy.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">smartstock-finance-service</a> &gt; <a href="index.source.html" class="el_package">com.osanzana.smartstock.finance.finanzas.strategies</a> &gt; <span class="el_source">DescuentoProximidadStrategy.java</span></div><h1>DescuentoProximidadStrategy.java</h1><pre class="source lang-java linenums">package com.osanzana.smartstock.finance.finanzas.strategies;
+
+import com.osanzana.smartstock.finance.core.entities.LoteInventario;
+import com.osanzana.smartstock.finance.core.entities.ReglaDepreciacion;
+import com.osanzana.smartstock.finance.core.repositories.LoteRepository;
+import com.osanzana.smartstock.finance.shared.dto.events.AlertaDescuentoEvent;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+
+@Component
+@RequiredArgsConstructor
+<span class="fc" id="L19">@Slf4j</span>
+public class DescuentoProximidadStrategy implements CalculoPrecioStrategy {
+
+    private final LoteRepository loteRepository;
+    private final KafkaTemplate&lt;String, Object&gt; kafkaTemplate;
+
+    @Override
+    public boolean esAplicable(LoteInventario lote, ReglaDepreciacion regla) {
+<span class="pc bpc" id="L27" title="1 of 4 branches missed.">        return regla.getDiasCriticosMin() != null &amp;&amp; regla.getDiasCriticosMin() &gt; 0;</span>
+    }
+
+    @Override
+    public boolean aplicar(LoteInventario lote, ReglaDepreciacion regla) {
+<span class="fc" id="L32">        long diasParaVencimiento = ChronoUnit.DAYS.between(LocalDate.now(), lote.getFechaVencimiento());</span>
+
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (diasParaVencimiento &lt;= regla.getDiasCriticosMin()) {</span>
+<span class="fc" id="L35">            log.info(&quot;[Strategy] Criterio de proximidad cumplido: {} días para vencimiento &lt;= {} días críticos.&quot;,</span>
+<span class="fc" id="L36">                    diasParaVencimiento, regla.getDiasCriticosMin());</span>
+
+<span class="fc" id="L38">            BigDecimal descuento = regla.getPorcentajeDescuento().divide(new BigDecimal(&quot;100&quot;), 2, RoundingMode.HALF_UP);</span>
+<span class="fc" id="L39">            BigDecimal precioConDescuento = lote.getPrecioDinamico().multiply(BigDecimal.ONE.subtract(descuento));</span>
+            
+<span class="fc" id="L41">            lote.setPrecioDinamico(precioConDescuento);</span>
+<span class="fc" id="L42">            loteRepository.save(lote);</span>
+
+<span class="fc" id="L44">            log.info(&quot;[Strategy] Descuento de proximidad aplicado: {}%&quot;, regla.getPorcentajeDescuento());</span>
+
+<span class="fc" id="L46">            AlertaDescuentoEvent evento = AlertaDescuentoEvent.builder()</span>
+<span class="fc" id="L47">                    .loteId(lote.getId())</span>
+<span class="fc" id="L48">                    .productoNombre(lote.getProducto().getNombre())</span>
+<span class="fc" id="L49">                    .porcentajeDescuento(regla.getPorcentajeDescuento())</span>
+<span class="fc" id="L50">                    .nuevoPrecio(precioConDescuento)</span>
+<span class="fc" id="L51">                    .comercioId(lote.getComercio().getId())</span>
+<span class="fc" id="L52">                    .build();</span>
+
+<span class="fc" id="L54">            kafkaTemplate.send(&quot;alerta-etiqueta&quot;, String.valueOf(lote.getId()), evento);</span>
+<span class="fc" id="L55">            return true;</span>
+        }
+        
+<span class="fc" id="L58">        return false;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

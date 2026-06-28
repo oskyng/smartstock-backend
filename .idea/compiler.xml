@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="smartstock-inventory-service" />
+        <module name="smartstock-alert-service" />
+        <module name="smartstock-auth-service" />
+        <module name="smartstock-bff-service" />
+        <module name="smartstock-finance-service" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="smartstock-common" target="17" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="smartstock-alert-service" options="-parameters" />
+      <module name="smartstock-auth-service" options="-parameters" />
+      <module name="smartstock-backend" options="" />
+      <module name="smartstock-bff-service" options="-parameters" />
+      <module name="smartstock-common" options="-parameters" />
+      <module name="smartstock-finance-service" options="-parameters" />
+      <module name="smartstock-inventory-service" options="-parameters" />
+    </option>
+  </component>
+</project>

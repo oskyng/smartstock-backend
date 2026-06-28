@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AlertaController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">smartstock-alert-service</a> &gt; <a href="index.source.html" class="el_package">com.osanzana.smartstock.alert.alertas.web</a> &gt; <span class="el_source">AlertaController.java</span></div><h1>AlertaController.java</h1><pre class="source lang-java linenums">package com.osanzana.smartstock.alert.alertas.web;
+
+import com.osanzana.smartstock.alert.shared.dto.response.AlertaResponseDTO;
+import com.osanzana.smartstock.alert.alertas.services.AlertaService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/api/v1/alertas&quot;)
+@RequiredArgsConstructor
+@Tag(name = &quot;Alertas&quot;, description = &quot;Endpoints para la gestión de tareas de reetiquetado&quot;)
+@SecurityRequirement(name = &quot;bearerAuth&quot;)
+public class AlertaController {
+
+    private final AlertaService alertaService;
+
+    @Operation(summary = &quot;Listar alertas pendientes&quot;)
+    @GetMapping(&quot;/pendientes&quot;)
+    public ResponseEntity&lt;List&lt;AlertaResponseDTO&gt;&gt; listarPendientes(
+            @RequestHeader(&quot;X-Comercio-ID&quot;) Long comercioId) {
+        
+<span class="fc" id="L28">        List&lt;AlertaResponseDTO&gt; alertas = alertaService.listarPendientesPorComercio(comercioId);</span>
+<span class="fc" id="L29">        return ResponseEntity.ok(alertas);</span>
+    }
+
+    @Operation(summary = &quot;Marcar alerta como atendida&quot;)
+    @PatchMapping(&quot;/{id}/atender&quot;)
+    public ResponseEntity&lt;Void&gt; atenderAlerta(@PathVariable Long id) {
+<span class="nc" id="L35">        alertaService.atenderAlerta(id);</span>
+<span class="nc" id="L36">        return ResponseEntity.noContent().build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

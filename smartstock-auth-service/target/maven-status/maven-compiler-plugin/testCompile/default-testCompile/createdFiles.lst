@@ -1,0 +1,3 @@
+com\osanzana\smartstock\auth\autenticacion\services\AuthServiceTest.class
+com\osanzana\smartstock\auth\autenticacion\services\UsuarioServiceImplTest.class
+com\osanzana\smartstock\auth\shared\security\JwtUtilsTest.class

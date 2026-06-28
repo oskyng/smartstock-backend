@@ -1,0 +1,3 @@
+com\osanzana\smartstock\alert\alertas\services\AlertaServiceImplTest.class
+com\osanzana\smartstock\alert\alertas\web\AlertaControllerTest.class
+com\osanzana\smartstock\alert\alertas\stream\AlertaEventConsumerTest.class

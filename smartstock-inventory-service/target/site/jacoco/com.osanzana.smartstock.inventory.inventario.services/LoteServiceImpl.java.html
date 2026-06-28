@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoteServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">smartstock-inventory-service</a> &gt; <a href="index.source.html" class="el_package">com.osanzana.smartstock.inventory.inventario.services</a> &gt; <span class="el_source">LoteServiceImpl.java</span></div><h1>LoteServiceImpl.java</h1><pre class="source lang-java linenums">package com.osanzana.smartstock.inventory.inventario.services;
+
+import com.osanzana.smartstock.inventory.core.entities.Usuario;
+import com.osanzana.smartstock.inventory.core.repositories.UsuarioRepository;
+import com.osanzana.smartstock.inventory.core.entities.Comercio;
+import com.osanzana.smartstock.inventory.core.repositories.ComercioRepository;
+import com.osanzana.smartstock.inventory.core.entities.LoteInventario;
+import com.osanzana.smartstock.inventory.core.entities.Producto;
+import com.osanzana.smartstock.inventory.core.entities.Proveedor;
+import com.osanzana.smartstock.inventory.inventario.events.LoteEventProducer;
+import com.osanzana.smartstock.inventory.core.repositories.LoteRepository;
+import com.osanzana.smartstock.inventory.core.repositories.ProductoRepository;
+import com.osanzana.smartstock.inventory.core.repositories.ProveedorRepository;
+import com.osanzana.smartstock.inventory.shared.dto.request.LoteRequestDTO;
+import com.osanzana.smartstock.inventory.shared.dto.response.LoteResponseDTO;
+import com.osanzana.smartstock.inventory.shared.exception.BusinessException;
+import com.osanzana.smartstock.inventory.shared.exception.ResourceNotFoundException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+<span class="fc" id="L28">@Slf4j</span>
+public class LoteServiceImpl implements LoteService {
+
+    private final LoteRepository loteRepository;
+    private final ProductoRepository productoRepository;
+    private final ProveedorRepository proveedorRepository;
+    private final ComercioRepository comercioRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final LoteEventProducer loteEventProducer;
+
+    @Override
+    @Transactional
+    public LoteResponseDTO guardarLote(LoteRequestDTO dto, Long comercioId) {
+<span class="fc" id="L41">        log.info(&quot;Guardando lote para producto {} y comercio {}&quot;, dto.getIdProducto(), comercioId);</span>
+
+<span class="fc" id="L43">        Producto producto = productoRepository.findById(dto.getIdProducto())</span>
+<span class="fc" id="L44">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Producto no encontrado&quot;));</span>
+
+<span class="fc" id="L46">        Proveedor proveedor = proveedorRepository.findById(dto.getIdProveedor())</span>
+<span class="pc" id="L47">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Proveedor no encontrado&quot;));</span>
+
+<span class="fc" id="L49">        Comercio comercio = comercioRepository.findById(comercioId)</span>
+<span class="pc" id="L50">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Comercio no encontrado&quot;));</span>
+
+        // Buscar un usuario operador por defecto para el comercio (para simplificar)
+<span class="fc" id="L53">        Usuario operador = usuarioRepository.findByRolNombreAndActivoAndComercioId(&quot;OPERADOR_INVENTARIO&quot;, 1, comercioId)</span>
+<span class="fc" id="L54">                .stream().findFirst()</span>
+<span class="fc" id="L55">                .orElseThrow(() -&gt; new BusinessException(&quot;No se encontró un OPERADOR_INVENTARIO activo para el comercio ID: &quot; + comercioId));</span>
+
+<span class="fc" id="L57">        LoteInventario lote = LoteInventario.builder()</span>
+<span class="fc" id="L58">                .producto(producto)</span>
+<span class="fc" id="L59">                .proveedor(proveedor)</span>
+<span class="fc" id="L60">                .comercio(comercio)</span>
+<span class="fc" id="L61">                .operador(operador)</span>
+<span class="fc" id="L62">                .cantidadInicial(dto.getCantidadInicial())</span>
+<span class="fc" id="L63">                .cantidadActual(dto.getCantidadInicial())</span>
+<span class="fc" id="L64">                .costoUnitario(dto.getCostoUnitario())</span>
+<span class="fc" id="L65">                .precioDinamico(dto.getPrecioDinamico())</span>
+<span class="fc" id="L66">                .fechaVencimiento(dto.getFechaVencimiento())</span>
+<span class="fc" id="L67">                .estadoLote(&quot;DISPONIBLE&quot;)</span>
+<span class="fc" id="L68">                .build();</span>
+
+<span class="fc" id="L70">        LoteInventario nuevoLote = loteRepository.save(lote);</span>
+        
+<span class="fc" id="L72">        loteEventProducer.publishLoteCreado(nuevoLote);</span>
+        
+<span class="fc" id="L74">        return mapToResponseDTO(nuevoLote);</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;LoteResponseDTO&gt; listarTodos() {
+<span class="fc" id="L80">        log.info(&quot;Listando todos los lotes&quot;);</span>
+<span class="fc" id="L81">        return loteRepository.findAll().stream()</span>
+<span class="fc" id="L82">                .map(this::mapToResponseDTO)</span>
+<span class="fc" id="L83">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;LoteResponseDTO&gt; listarPorComercio(Long comercioId) {
+<span class="fc" id="L89">        log.info(&quot;Listando lotes para el comercio {}&quot;, comercioId);</span>
+<span class="fc" id="L90">        return loteRepository.findByComercioId(comercioId).stream()</span>
+<span class="fc" id="L91">                .map(this::mapToResponseDTO)</span>
+<span class="fc" id="L92">                .collect(Collectors.toList());</span>
+    }
+
+    private LoteResponseDTO mapToResponseDTO(LoteInventario lote) {
+<span class="fc" id="L96">        return LoteResponseDTO.builder()</span>
+<span class="fc" id="L97">                .id(lote.getId())</span>
+<span class="fc" id="L98">                .nombreProducto(lote.getProducto().getNombre())</span>
+<span class="fc" id="L99">                .cantidadActual(lote.getCantidadActual())</span>
+<span class="fc" id="L100">                .precioDinamico(lote.getPrecioDinamico())</span>
+<span class="fc" id="L101">                .fechaVencimiento(lote.getFechaVencimiento())</span>
+<span class="fc" id="L102">                .estadoLote(lote.getEstadoLote())</span>
+<span class="fc" id="L103">                .fechaRecepcion(lote.getFechaRecepcion())</span>
+<span class="fc" id="L104">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

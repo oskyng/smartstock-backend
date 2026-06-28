@@ -1,0 +1,11 @@
+com\osanzana\smartstock\bff\dto\DashboardResponseDTO.class
+com\osanzana\smartstock\bff\clients\SmartStockClient.class
+com\osanzana\smartstock\bff\config\SecurityConfig.class
+com\osanzana\smartstock\bff\BffApplication.class
+com\osanzana\smartstock\bff\security\JwtAuthenticationFilter.class
+com\osanzana\smartstock\bff\security\JwtUtils.class
+com\osanzana\smartstock\bff\config\OpenApiConfig.class
+com\osanzana\smartstock\bff\web\BffController.class
+com\osanzana\smartstock\bff\config\WebClientConfig.class
+com\osanzana\smartstock\bff\dto\DashboardResponseDTO$DashboardResponseDTOBuilder.class
+com\osanzana\smartstock\bff\security\SecurityConfig.class

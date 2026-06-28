@@ -1,0 +1,10 @@
+E:\Duoc\SmartStock\smartstock-backend\smartstock-bff-service\src\main\java\com\osanzana\smartstock\bff\BffApplication.java
+E:\Duoc\SmartStock\smartstock-backend\smartstock-bff-service\src\main\java\com\osanzana\smartstock\bff\clients\SmartStockClient.java
+E:\Duoc\SmartStock\smartstock-backend\smartstock-bff-service\src\main\java\com\osanzana\smartstock\bff\config\OpenApiConfig.java
+E:\Duoc\SmartStock\smartstock-backend\smartstock-bff-service\src\main\java\com\osanzana\smartstock\bff\config\SecurityConfig.java
+E:\Duoc\SmartStock\smartstock-backend\smartstock-bff-service\src\main\java\com\osanzana\smartstock\bff\config\WebClientConfig.java
+E:\Duoc\SmartStock\smartstock-backend\smartstock-bff-service\src\main\java\com\osanzana\smartstock\bff\dto\DashboardResponseDTO.java
+E:\Duoc\SmartStock\smartstock-backend\smartstock-bff-service\src\main\java\com\osanzana\smartstock\bff\security\JwtAuthenticationFilter.java
+E:\Duoc\SmartStock\smartstock-backend\smartstock-bff-service\src\main\java\com\osanzana\smartstock\bff\security\JwtUtils.java
+E:\Duoc\SmartStock\smartstock-backend\smartstock-bff-service\src\main\java\com\osanzana\smartstock\bff\security\SecurityConfig.java
+E:\Duoc\SmartStock\smartstock-backend\smartstock-bff-service\src\main\java\com\osanzana\smartstock\bff\web\BffController.java
