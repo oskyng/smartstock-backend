@@ -4,7 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="90f55ae5-4217-42f5-ac5a-00c6f76fbdf7" name="Changes" comment="" />
+    <list default="true" id="90f55ae5-4217-42f5-ac5a-00c6f76fbdf7" name="Changes" comment="feat: Se implementa CORS para la comunicacion con el front">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/shared/security/HttpSecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/shared/security/HttpSecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/shared/security/HttpSecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/shared/security/HttpSecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/config/SecurityConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/security/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/security/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/shared/security/HttpSecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/shared/security/HttpSecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/shared/security/HttpSecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/shared/security/HttpSecurityConfig.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -37,6 +45,26 @@
     <option name="cachedIndexableFilesCount" value="263" />
     <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="main" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;oskyng&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/oskyng/smartstock-backend.git&quot;,
+    &quot;accountId&quot;: &quot;f62afbbb-6761-43a3-a59c-ed3d3432f9b2&quot;
+  }
+}</component>
   <component name="KubernetesApiPersistence">{}</component>
   <component name="KubernetesApiProvider">{
   &quot;isMigrated&quot;: true
@@ -54,61 +82,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="7.903271464111142E-105" />
-      <entry key="MS500" value="1.5120333836193064E-21" />
-      <entry key="S2" value="6.235773685365926E-6" />
-      <entry key="S5" value="0.008278585490787362" />
-      <entry key="S10" value="0.09098673249868554" />
-      <entry key="S30" value="0.4497723101762356" />
-      <entry key="S60" value="0.6711086207494528" />
-      <entry key="M2" value="0.8799548900377603" />
-      <entry key="M5" value="2.2103522411724095" />
-      <entry key="M10" value="5.008082350775344" />
-      <entry key="M15" value="7.102574917078796" />
-      <entry key="M30" value="10.465226464817892" />
-      <entry key="H1" value="12.881832281199022" />
-      <entry key="H2" value="14.340586091345294" />
-      <entry key="H4" value="15.143419339576713" />
-      <entry key="D1" value="15.853340996947415" />
-      <entry key="W1" value="15.978951106515593" />
+      <entry key="MS100" value="1.5596886978719593" />
+      <entry key="MS500" value="3.379776113741944" />
+      <entry key="S2" value="5.849904234965531" />
+      <entry key="S5" value="6.984090666376658" />
+      <entry key="S10" value="7.460992265976703" />
+      <entry key="S30" value="7.812875362416557" />
+      <entry key="S60" value="7.905505196789692" />
+      <entry key="M2" value="7.973409877433306" />
+      <entry key="M5" value="8.928032659789372" />
+      <entry key="M10" value="11.545929961393687" />
+      <entry key="M15" value="14.06741264546303" />
+      <entry key="M30" value="20.47488251857835" />
+      <entry key="H1" value="28.016575696368264" />
+      <entry key="H2" value="34.19289269835729" />
+      <entry key="H4" value="38.380596469949175" />
+      <entry key="D1" value="49.721168732465" />
+      <entry key="W1" value="57.25645138315175" />
     </decayedCancelled>
     <decayedSelected>
-      <entry key="MS100" value="1.0000000010121006" />
-      <entry key="MS500" value="1.0158895386741191" />
-      <entry key="S2" value="1.3945510549673523" />
-      <entry key="S5" value="1.9496349956891939" />
-      <entry key="S10" value="2.45616743736457" />
-      <entry key="S30" value="3.231703399172537" />
-      <entry key="S60" value="3.565535488929992" />
-      <entry key="M2" value="3.76806064601544" />
-      <entry key="M5" value="3.903377784532404" />
-      <entry key="M10" value="3.9510193100639532" />
-      <entry key="M15" value="3.967195219193136" />
-      <entry key="M30" value="3.983521560011369" />
-      <entry key="H1" value="3.9917416626359414" />
-      <entry key="H2" value="3.995866038787289" />
-      <entry key="H4" value="3.9979318196082643" />
-      <entry key="D1" value="3.999655136490715" />
-      <entry key="W1" value="3.999950729698212" />
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="0.0" />
+      <entry key="S60" value="0.0" />
+      <entry key="M2" value="9.572276722242763E-231" />
+      <entry key="M5" value="2.2563139602305715E-92" />
+      <entry key="M10" value="3.0039218123633122E-46" />
+      <entry key="M15" value="7.119834305011707E-31" />
+      <entry key="M30" value="1.6875643000863936E-15" />
+      <entry key="H1" value="8.21597304152425E-8" />
+      <entry key="H2" value="5.732699924746134E-4" />
+      <entry key="H4" value="0.047886106612770124" />
+      <entry key="D1" value="1.9131612272989398" />
+      <entry key="W1" value="3.599992908648989" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.05255602597177635" />
-      <entry key="MS500" value="0.5619142482240839" />
-      <entry key="S2" value="1.1711671761377251" />
-      <entry key="S5" value="1.7713818156394647" />
-      <entry key="S10" value="2.39651260857167" />
-      <entry key="S30" value="3.599540432919017" />
-      <entry key="S60" value="4.188608560257286" />
-      <entry key="M2" value="4.6218205224513556" />
-      <entry key="M5" value="6.102621868885824" />
-      <entry key="M10" value="8.953383687963395" />
-      <entry key="M15" value="11.065901214373481" />
-      <entry key="M30" value="14.446773212349944" />
-      <entry key="H1" value="16.87257289667449" />
-      <entry key="H2" value="18.33594757922045" />
-      <entry key="H4" value="19.14109778553562" />
-      <entry key="D1" value="19.85295374344942" />
-      <entry key="W1" value="19.978895776440464" />
+      <entry key="MS100" value="1.5103852960149504" />
+      <entry key="MS500" value="3.3246217119232444" />
+      <entry key="S2" value="5.821536314292243" />
+      <entry key="S5" value="6.970540964602479" />
+      <entry key="S10" value="7.453779454287747" />
+      <entry key="S30" value="7.810365886211165" />
+      <entry key="S60" value="7.904236773943845" />
+      <entry key="M2" value="7.972771263404775" />
+      <entry key="M5" value="8.927759610499795" />
+      <entry key="M10" value="11.545767530599537" />
+      <entry key="M15" value="14.067283115350293" />
+      <entry key="M30" value="20.474782975127983" />
+      <entry key="H1" value="28.016502488162423" />
+      <entry key="H2" value="34.19341910137729" />
+      <entry key="H4" value="38.428452776016485" />
+      <entry key="D1" value="51.63430466383708" />
+      <entry key="W1" value="60.856438105858224" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -120,39 +148,43 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
-    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
-    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
-    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;Spring Boot.SmartstockBackendApplication.executor&quot;: &quot;Run&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;copilot.chat.legacySessionMetadata.migrated&quot;: &quot;true&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;run.configurations.included.in.services&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;configurable.group.build&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "JUnit.JwtUtilsTest.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RequestMappingsPanelOrder0": "0",
+    "RequestMappingsPanelOrder1": "1",
+    "RequestMappingsPanelWidth0": "75",
+    "RequestMappingsPanelWidth1": "75",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SONARLINT_PRECOMMIT_ANALYSIS": "true",
+    "Spring Boot.SmartstockBackendApplication.executor": "Run",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "copilot.chat.legacySessionMetadata.migrated": "true",
+    "git-widget-placeholder": "desarrollo",
+    "ignore.virus.scanning.warn.message": "true",
+    "junie.onboarding.icon.badge.shown": "true",
+    "kotlin-language-version-configured": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "run.configurations.included.in.services": "true",
+    "settings.editor.selected.configurable": "ml.llm.AcpAgentsConfigurable",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;DatabaseDriversLRU&quot;: [
-      &quot;oracle&quot;
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "oracle"
     ]
   }
-}</component>
+}]]></component>
   <component name="RunDashboard">
     <option name="configurationTypes">
       <set>
@@ -256,12 +288,30 @@
       <workItem from="1782009112992" duration="173000" />
       <workItem from="1782009365572" duration="9121000" />
       <workItem from="1782525900266" duration="109000" />
-      <workItem from="1782526055205" duration="8766000" />
+      <workItem from="1782526055205" duration="12431000" />
     </task>
+    <task id="LOCAL-00001" summary="feat: Se eliminan los archivos del target y se agregan al gitignore">
+      <option name="closed" value="true" />
+      <created>1782615808378</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1782615808378</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="feat: Se eliminan los archivos del target y se agregan al gitignore" />
+    <MESSAGE value="feat: Se implementa CORS para la comunicacion con el front" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: Se implementa CORS para la comunicacion con el front" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>
