@@ -2,6 +2,8 @@ package com.osanzana.smartstock.bff.web;
 
 import com.osanzana.smartstock.bff.clients.SmartStockClient;
 import com.osanzana.smartstock.bff.dto.DashboardResponseDTO;
+import com.osanzana.smartstock.bff.dto.LoginRequestDTO;
+import com.osanzana.smartstock.bff.dto.LoginResponseDTO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,9 +31,16 @@ class BffControllerTest {
 
     @Test
     void login_Success() {
-        Object loginRequest = Collections.singletonMap("username", "test");
-        Object loginResponse = Collections.singletonMap("token", "jwt");
-        when(client.login(any())).thenReturn(Mono.just(loginResponse));
+        LoginRequestDTO loginRequest = LoginRequestDTO.builder()
+                .email("test@test.com")
+                .password("pass")
+                .build();
+        LoginResponseDTO loginResponse = LoginResponseDTO.builder()
+                .token("jwt")
+                .email("test@test.com")
+                .rol("ADMIN")
+                .build();
+        when(client.login(any(LoginRequestDTO.class))).thenReturn(Mono.just(loginResponse));
 
         StepVerifier.create(bffController.login(loginRequest))
                 .expectNext(loginResponse)

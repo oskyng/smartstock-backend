@@ -42,7 +42,10 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        authRequest = new AuthRequestDTO("test@example.com", "password");
+        authRequest = AuthRequestDTO.builder()
+                .email("test@example.com")
+                .password("password")
+                .build();
         usuario = Usuario.builder()
                 .email("test@example.com")
                 .passwordHash("hashedPassword")
