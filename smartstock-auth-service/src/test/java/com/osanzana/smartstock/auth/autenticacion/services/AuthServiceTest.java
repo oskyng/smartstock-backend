@@ -1,5 +1,6 @@
 package com.osanzana.smartstock.auth.autenticacion.services;
 
+import com.osanzana.smartstock.auth.core.entities.Comercio;
 import com.osanzana.smartstock.auth.core.entities.Rol;
 import com.osanzana.smartstock.auth.core.entities.Usuario;
 import com.osanzana.smartstock.auth.core.repositories.UsuarioRepository;
@@ -63,6 +64,7 @@ class AuthServiceTest {
         assertNotNull(response);
         assertEquals("mockToken", response.getToken());
         assertEquals("test@example.com", response.getEmail());
+        assertEquals("ADMIN", response.getRol());
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
     }
 
@@ -71,5 +73,26 @@ class AuthServiceTest {
         when(usuarioRepository.findByEmail(authRequest.getEmail())).thenReturn(Optional.empty());
 
         assertThrows(BusinessException.class, () -> authService.login(authRequest));
+    }
+
+    @Test
+    void login_Success_WithComercio() {
+        Rol rol = Rol.builder().id(2L).nombre("GERENTE_TIENDA").build();
+        Comercio comercio = Comercio.builder().id(5L).razonSocial("Tienda Test").build();
+        Usuario usuarioComercio = Usuario.builder()
+                .email("test2@example.com")
+                .passwordHash("hashed")
+                .rol(rol)
+                .comercio(comercio)
+                .build();
+        AuthRequestDTO req = AuthRequestDTO.builder().email("test2@example.com").password("pass").build();
+
+        when(usuarioRepository.findByEmail(req.getEmail())).thenReturn(Optional.of(usuarioComercio));
+        when(jwtUtils.generateToken(any(), anyMap())).thenReturn("token2");
+
+        AuthResponseDTO response = authService.login(req);
+
+        assertNotNull(response);
+        assertEquals(5L, response.getIdComercio());
     }
 }

@@ -20,7 +20,7 @@ class JwtUtilsTest {
     @BeforeEach
     void setUp() {
         jwtUtils = new JwtUtils();
-        ReflectionTestUtils.setField(jwtUtils, "secret", "smartstock_super_secret_key_2026_jwt_token_must_be_long");
+        ReflectionTestUtils.setField(jwtUtils, "secret", "smartstock_super_secret_key_2026_jwt_token_must_be_long_enough");
         ReflectionTestUtils.setField(jwtUtils, "expiration", 3600000L);
         
         userDetails = new User("test@example.com", "password", Collections.emptyList());

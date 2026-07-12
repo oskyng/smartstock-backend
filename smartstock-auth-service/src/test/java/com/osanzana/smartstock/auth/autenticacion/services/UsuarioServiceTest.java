@@ -7,9 +7,11 @@ import com.osanzana.smartstock.auth.core.repositories.ComercioRepository;
 import com.osanzana.smartstock.auth.core.repositories.RolRepository;
 import com.osanzana.smartstock.auth.core.repositories.UsuarioRepository;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioCreateRequestDTO;
+import com.osanzana.smartstock.auth.shared.dto.request.UsuarioRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.response.UsuarioResponseDTO;
 import com.osanzana.smartstock.auth.shared.exception.ConflictException;
 import com.osanzana.smartstock.auth.shared.exception.ResourceNotFoundException;
+import com.osanzana.smartstock.auth.shared.exception.UnauthorizedActionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -110,5 +112,89 @@ class UsuarioServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> 
             usuarioService.crearAdminSistema(requestDTO));
+    }
+
+    @Test
+    void crearUsuario_Success_AdminSolicitante() {
+        UsuarioRequestDTO userReq = UsuarioRequestDTO.builder()
+                .rut("11222333-4")
+                .nombre("Gerente")
+                .apellido("Tienda")
+                .email("gerente@tienda.cl")
+                .password("pass123")
+                .idRol(2L)
+                .idComercio(1L)
+                .build();
+
+        Rol rolGerente = Rol.builder().id(2L).nombre("GERENTE_TIENDA").build();
+        Comercio comercio = Comercio.builder().id(1L).razonSocial("Tienda 1").build();
+
+        when(usuarioRepository.findByEmail(userReq.getEmail())).thenReturn(Optional.empty());
+        when(usuarioRepository.findByRut(userReq.getRut())).thenReturn(Optional.empty());
+        when(rolRepository.findById(2L)).thenReturn(Optional.of(rolGerente));
+        when(comercioRepository.findById(1L)).thenReturn(Optional.of(comercio));
+        when(passwordEncoder.encode(anyString())).thenReturn("hashed");
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        UsuarioResponseDTO response = usuarioService.crearUsuario(userReq, null, "ADMIN_SISTEMA");
+
+        assertNotNull(response);
+        assertEquals(userReq.getEmail(), response.getEmail());
+        assertEquals(1L, response.getIdComercio());
+    }
+
+    @Test
+    void crearUsuario_Success_GerenteSolicitante() {
+        UsuarioRequestDTO userReq = UsuarioRequestDTO.builder()
+                .rut("44555666-7")
+                .nombre("Reponedor")
+                .apellido("Sala")
+                .email("repo@tienda.cl")
+                .password("pass123")
+                .idRol(3L)
+                .idComercio(2L) // Intenta forzar otro comercio
+                .build();
+
+        Rol rolRepo = Rol.builder().id(3L).nombre("REPONEDOR_SALA").build();
+        Comercio comercioPropio = Comercio.builder().id(1L).razonSocial("Tienda Propia").build();
+
+        when(usuarioRepository.findByEmail(userReq.getEmail())).thenReturn(Optional.empty());
+        when(usuarioRepository.findByRut(userReq.getRut())).thenReturn(Optional.empty());
+        when(rolRepository.findById(3L)).thenReturn(Optional.of(rolRepo));
+        when(comercioRepository.findById(1L)).thenReturn(Optional.of(comercioPropio));
+        when(passwordEncoder.encode(anyString())).thenReturn("hashed");
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        // idComercioContexto = 1L. Debe ignorar el 2L del request.
+        UsuarioResponseDTO response = usuarioService.crearUsuario(userReq, 1L, "GERENTE_TIENDA");
+
+        assertNotNull(response);
+        assertEquals(1L, response.getIdComercio());
+    }
+
+    @Test
+    void crearUsuario_Unauthorized_GerenteCreatesGerente() {
+        UsuarioRequestDTO userReq = UsuarioRequestDTO.builder()
+                .idRol(2L)
+                .build();
+        Rol rolGerente = Rol.builder().nombre("GERENTE_TIENDA").build();
+
+        when(rolRepository.findById(2L)).thenReturn(Optional.of(rolGerente));
+
+        assertThrows(UnauthorizedActionException.class, () -> 
+            usuarioService.crearUsuario(userReq, 1L, "GERENTE_TIENDA"));
+    }
+
+    @Test
+    void crearUsuario_Unauthorized_LowRole() {
+        UsuarioRequestDTO userReq = UsuarioRequestDTO.builder()
+                .idRol(3L)
+                .build();
+        Rol rolRepo = Rol.builder().nombre("REPONEDOR_SALA").build();
+
+        when(rolRepository.findById(3L)).thenReturn(Optional.of(rolRepo));
+
+        assertThrows(UnauthorizedActionException.class, () -> 
+            usuarioService.crearUsuario(userReq, 1L, "REPONEDOR_SALA"));
     }
 }

@@ -30,7 +30,7 @@ public class AlertaController {
     }
 
     @Operation(summary = "Marcar alerta como atendida")
-    @PatchMapping("/{id}/atender")
+    @PutMapping("/{id}/atender")
     public ResponseEntity<Void> atenderAlerta(@PathVariable Long id) {
         alertaService.atenderAlerta(id);
         return ResponseEntity.noContent().build();

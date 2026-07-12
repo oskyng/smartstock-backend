@@ -59,7 +59,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<ErrorResponse> handleMissingRequestHeaderException(MissingRequestHeaderException ex, WebRequest request) {
         log.error("Missing header error: {}", ex.getMessage());
-        String message = String.format("El encabezado '%s' es obligatorio", ex.getHeaderName());
+        String message = String.format("Auth Service: El encabezado '%s' es obligatorio", ex.getHeaderName());
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request);
     }
 

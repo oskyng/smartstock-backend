@@ -80,4 +80,14 @@ class MotorPreciosServiceImplTest {
         assertFalse(result);
         verify(estrategia, never()).aplicar(any(), any());
     }
+
+    @Test
+    void calcularPrecioDinamico_ExceptionHandled() {
+        when(reglaRepository.findByCategoriaIdAndComercioIdAndActiva(anyLong(), anyLong(), anyInt()))
+                .thenReturn(Collections.singletonList(regla));
+        when(estrategia.esAplicable(lote, regla)).thenReturn(true);
+        when(estrategia.aplicar(lote, regla)).thenThrow(new RuntimeException("Error"));
+
+        assertThrows(RuntimeException.class, () -> motorPreciosService.calcularPrecioDinamico(lote));
+    }
 }

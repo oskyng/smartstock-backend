@@ -6,7 +6,10 @@ import com.osanzana.smartstock.alert.core.entities.LoteInventario;
 import com.osanzana.smartstock.alert.core.entities.Usuario;
 import com.osanzana.smartstock.alert.core.repositories.LoteRepository;
 import com.osanzana.smartstock.alert.core.repositories.UsuarioRepository;
+import com.osanzana.smartstock.alert.alertas.services.AlertaService;
+import com.osanzana.smartstock.alert.shared.dto.EventoBaseDTO;
 import com.osanzana.smartstock.alert.shared.dto.events.AlertaDescuentoEvent;
+import com.osanzana.smartstock.alert.shared.dto.events.LoteEventDTO;
 import com.osanzana.smartstock.alert.shared.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +27,14 @@ public class AlertaEventConsumer {
     private final AlertaAccionRepository alertaRepository;
     private final UsuarioRepository usuarioRepository;
     private final LoteRepository loteRepository;
+    private final AlertaService alertaService;
+
+    @KafkaListener(topics = "lote-creado", groupId = "smartstock-alert-group")
+    @Transactional
+    public void consumeLoteCreado(EventoBaseDTO<LoteEventDTO> evento) {
+        log.info("[KAFKA] Recibido LOTE_CREADO para producto: {}", evento.getPayload().getProductoNombre());
+        alertaService.procesarNuevoLote(evento.getPayload());
+    }
 
     @KafkaListener(topics = "alerta-etiqueta", groupId = "smartstock-alert-group")
     @Transactional

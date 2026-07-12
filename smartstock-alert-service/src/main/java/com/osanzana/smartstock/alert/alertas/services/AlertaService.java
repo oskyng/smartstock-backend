@@ -12,4 +12,5 @@ public interface AlertaService {
     void generarAlertaDescuento(LoteInventario lote, ReglaDepreciacion regla);
     void atenderAlerta(Long alertaId);
     void procesarEscalamientoSLA();
+    void procesarNuevoLote(com.osanzana.smartstock.alert.shared.dto.events.LoteEventDTO loteEvent);
 }
