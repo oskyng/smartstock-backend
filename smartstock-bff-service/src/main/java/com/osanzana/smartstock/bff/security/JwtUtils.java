@@ -52,7 +52,11 @@ public class JwtUtils {
             if (idComercio instanceof Long) {
                 return (Long) idComercio;
             }
-            return Long.parseLong(idComercio.toString());
+            String value = idComercio.toString().trim();
+            if (value.isEmpty()) {
+                return null;
+            }
+            return Long.parseLong(value);
         });
     }
 

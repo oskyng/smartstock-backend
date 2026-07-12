@@ -70,7 +70,8 @@ public class JwtUtils {
                 return ((Integer) idComercio).longValue();
             }
             if (idComercio instanceof String) {
-                return Long.parseLong((String) idComercio);
+                String value = ((String) idComercio).trim();
+                return value.isEmpty() ? null : Long.parseLong(value);
             }
             return (Long) idComercio;
         });

@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -43,43 +44,44 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
-        requestHandler.setCsrfRequestAttributeName("_csrf");
-
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        // A. Acceso público
                         .requestMatchers(
                                 "/api/v1/bff/auth/login",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-                        // B. OPERACIONES EXCLUSIVAS DEL ROL [ADMIN_SISTEMA]
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/bff/comercios").hasRole("ADMIN_SISTEMA")
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/bff/comercios").hasRole("ADMIN_SISTEMA")
-                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/bff/comercios/**").hasRole("ADMIN_SISTEMA")
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/bff/usuarios").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
-                        
-                        // C. OPERACIONES DEL ROL [GERENTE_TIENDA]
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/bff/dashboard").hasRole("GERENTE_TIENDA")
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/bff/reglas-depreciacion").hasRole("GERENTE_TIENDA")
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/bff/reglas-depreciacion").hasRole("GERENTE_TIENDA")
-                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/bff/reglas-depreciacion/**").hasRole("GERENTE_TIENDA")
-                        
-                        // D. OPERACIONES DEL ROL [OPERADOR_INVENTARIO]
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/bff/productos").hasRole("OPERADOR_INVENTARIO")
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/bff/productos").hasRole("OPERADOR_INVENTARIO")
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/bff/inventario/lotes").hasRole("OPERADOR_INVENTARIO")
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/bff/inventario/lotes").hasRole("OPERADOR_INVENTARIO")
-                        
-                        // E. OPERACIONES DEL ROL [REPONEDOR_SALA]
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/bff/alertas").hasRole("REPONEDOR_SALA")
-                        
-                        // F. OPERACIÓN COMPARTIDA
-                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/v1/bff/alertas/*/atender").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA", "REPONEDOR_SALA")
-                        
+
+                        // B. [ADMIN_SISTEMA] - Gestión global de comercios (Commerce Service)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/comercios/**").hasRole("ADMIN_SISTEMA")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bff/comercios/**").hasRole("ADMIN_SISTEMA")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/bff/comercios/**").hasRole("ADMIN_SISTEMA")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/bff/comercios/**").hasRole("ADMIN_SISTEMA")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bff/usuarios").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
+
+                        // C. [GERENTE_TIENDA] - Dashboard y reglas de depreciación
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/dashboard").hasRole("GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/reglas-depreciacion/**").hasRole("GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bff/reglas-depreciacion/**").hasRole("GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/bff/reglas-depreciacion/**").hasRole("GERENTE_TIENDA")
+
+                        // D. [OPERADOR_INVENTARIO] - Productos e inventario de lotes
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/productos/**").hasRole("OPERADOR_INVENTARIO")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bff/productos/**").hasRole("OPERADOR_INVENTARIO")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/inventario/lotes/**").hasRole("OPERADOR_INVENTARIO")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bff/inventario/lotes/**").hasRole("OPERADOR_INVENTARIO")
+
+                        // E. [REPONEDOR_SALA] - Alertas de sala
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/alertas").hasRole("REPONEDOR_SALA")
+
+                        // F. Resolución de alarmas (CA-07) - Operación compartida
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/bff/alertas/*/atender")
+                        .hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA", "REPONEDOR_SALA")
+
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

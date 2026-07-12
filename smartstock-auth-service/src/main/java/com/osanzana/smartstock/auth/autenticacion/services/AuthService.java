@@ -40,10 +40,13 @@ public class AuthService {
         );
 
         Map<String, Object> claims = new HashMap<>();
-        claims.put("rut", usuario.getRut());
         claims.put("rol", usuario.getRol().getNombre());
-        if (usuario.getComercio() != null) {
+        if ("ADMIN_SISTEMA".equals(usuario.getRol().getNombre())) {
+            claims.put("idComercio", null);
+        } else if (usuario.getComercio() != null) {
             claims.put("idComercio", usuario.getComercio().getId());
+        } else {
+            claims.put("idComercio", null);
         }
 
         String token = jwtUtils.generateToken(userDetails, claims);

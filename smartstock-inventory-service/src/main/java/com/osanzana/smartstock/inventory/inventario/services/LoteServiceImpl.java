@@ -42,9 +42,9 @@ public class LoteServiceImpl implements LoteService {
         log.info("Guardando lote para producto {} y comercio {}", dto.getIdProducto(), comercioId);
 
         // Validación de Negocio: Fecha de Vencimiento Crítica (CA-03)
-        if (dto.getFechaVencimiento().isBefore(LocalDate.now()) || dto.getFechaVencimiento().isEqual(LocalDate.now())) {
+        if (!dto.getFechaVencimiento().isAfter(LocalDate.now())) {
             log.error("Rechazo de lote: La fecha de vencimiento ({}) debe ser posterior a la fecha actual.", dto.getFechaVencimiento());
-            throw new BusinessException("No se puede registrar un lote vencido o que vence hoy. Fecha: " + dto.getFechaVencimiento());
+            throw new BusinessException("Control de mermas: No se permiten lotes vencidos o por vencer hoy. Fecha ingresada: " + dto.getFechaVencimiento());
         }
 
         Producto producto = productoRepository.findById(dto.getIdProducto())

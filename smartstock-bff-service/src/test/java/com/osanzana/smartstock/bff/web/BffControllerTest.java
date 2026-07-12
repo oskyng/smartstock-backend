@@ -1,9 +1,14 @@
 package com.osanzana.smartstock.bff.web;
 
 import com.osanzana.smartstock.bff.clients.SmartStockClient;
-import com.osanzana.smartstock.bff.dto.DashboardResponseDTO;
+import com.osanzana.smartstock.bff.dto.ComercioRequestDTO;
+import com.osanzana.smartstock.bff.dto.ComercioResponseDTO;
 import com.osanzana.smartstock.bff.dto.LoginRequestDTO;
 import com.osanzana.smartstock.bff.dto.LoginResponseDTO;
+import com.osanzana.smartstock.bff.dto.ProductoResponseDTO;
+import com.osanzana.smartstock.bff.dto.UsuarioCreateResponseDTO;
+import com.osanzana.smartstock.bff.dto.UsuarioRequestDTO;
+import com.osanzana.smartstock.bff.dto.UsuarioResponseDTO;
 import com.osanzana.smartstock.bff.stream.AuditStreamService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,12 +16,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
@@ -54,27 +59,68 @@ class BffControllerTest {
 
     @Test
     void crearUsuario_Success() {
-        Object usuarioRequest = new Object();
-        when(client.crearUsuario(any(), anyLong())).thenReturn(Mono.just("Usuario creado"));
+        UsuarioRequestDTO usuarioRequest = UsuarioRequestDTO.builder()
+                .rut("11.111.111-1")
+                .nombre("Test")
+                .apellido("User")
+                .email("test@test.com")
+                .password("password123")
+                .idRol(1L)
+                .build();
+        UsuarioCreateResponseDTO expected = UsuarioCreateResponseDTO.builder()
+                .mensaje("Usuario creado exitosamente.")
+                .usuario(UsuarioResponseDTO.builder().id(1L).email("test@test.com").build())
+                .timestamp(System.currentTimeMillis())
+                .build();
+        when(client.crearUsuario(any(), anyLong())).thenReturn(Mono.just(expected));
 
         StepVerifier.create(bffController.crearUsuario(1L, usuarioRequest))
-                .expectNext("Usuario creado")
+                .expectNext(expected)
+                .verifyComplete();
+    }
+
+    @Test
+    void listarComercios_Success() {
+        when(client.listarComercios()).thenReturn(Mono.just(Collections.emptyList()));
+
+        StepVerifier.create(bffController.listarComercios())
+                .assertNext(response -> {
+                    assertEquals(HttpStatus.OK, response.getStatusCode());
+                    assertEquals(Collections.emptyList(), response.getBody());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void crearComercio_Success() {
+        ComercioRequestDTO request = ComercioRequestDTO.builder()
+                .rutEmpresa("76.123.456-7")
+                .razonSocial("Empresa Test")
+                .build();
+        ComercioResponseDTO expected = ComercioResponseDTO.builder().id(1L).razonSocial("Empresa Test").build();
+        when(client.crearComercio(any())).thenReturn(Mono.just(expected));
+
+        StepVerifier.create(bffController.crearComercio(request))
+                .assertNext(response -> {
+                    assertEquals(HttpStatus.CREATED, response.getStatusCode());
+                    assertEquals(expected, response.getBody());
+                })
                 .verifyComplete();
     }
 
     @Test
     void getDashboard_Success() {
-        when(client.listarProductos(anyLong())).thenReturn(Mono.just("[]"));
-        when(client.listarLotes(anyLong())).thenReturn(Mono.just("[]"));
-        when(client.listarAlertas(anyLong())).thenReturn(Mono.just("[]"));
-        when(client.listarReglas(anyLong())).thenReturn(Mono.just("[]"));
+        when(client.listarProductos(anyLong())).thenReturn(Mono.just(Collections.emptyList()));
+        when(client.listarLotes(anyLong())).thenReturn(Mono.just(Collections.emptyList()));
+        when(client.listarAlertas(anyLong())).thenReturn(Mono.just(Collections.emptyList()));
+        when(client.listarReglas(anyLong())).thenReturn(Mono.just(Collections.emptyList()));
 
         StepVerifier.create(bffController.getDashboard(1L))
                 .assertNext(dashboard -> {
-                    assertEquals("[]", dashboard.getProductos());
-                    assertEquals("[]", dashboard.getLotesRecientes());
-                    assertEquals("[]", dashboard.getAlertasPendientes());
-                    assertEquals("[]", dashboard.getReglasActivas());
+                    assertEquals(Collections.emptyList(), dashboard.getProductos());
+                    assertEquals(Collections.emptyList(), dashboard.getLotesRecientes());
+                    assertEquals(Collections.emptyList(), dashboard.getAlertasPendientes());
+                    assertEquals(Collections.emptyList(), dashboard.getReglasActivas());
                 })
                 .verifyComplete();
     }
@@ -82,10 +128,13 @@ class BffControllerTest {
     @Test
     void listarAlertas_Success() {
         Long comercioId = 1L;
-        when(client.listarAlertas(eq(comercioId))).thenReturn(Mono.just("[]"));
+        when(client.listarAlertas(eq(comercioId))).thenReturn(Mono.just(Collections.emptyList()));
 
         StepVerifier.create(bffController.listarAlertas(comercioId))
-                .expectNext("[]")
+                .assertNext(response -> {
+                    assertEquals(HttpStatus.OK, response.getStatusCode());
+                    assertEquals(Collections.emptyList(), response.getBody());
+                })
                 .verifyComplete();
     }
 
@@ -106,7 +155,7 @@ class BffControllerTest {
                 .alertaId(1L)
                 .productoNombre("Producto Test")
                 .build();
-        
+
         when(auditStreamService.getAuditStream()).thenReturn(Flux.just(event));
 
         StepVerifier.create(bffController.getAuditStream())
@@ -116,10 +165,14 @@ class BffControllerTest {
 
     @Test
     void listarProductos_Success() {
-        when(client.listarProductos(anyLong())).thenReturn(Mono.just("[]"));
+        List<ProductoResponseDTO> productos = Collections.emptyList();
+        when(client.listarProductos(anyLong())).thenReturn(Mono.just(productos));
 
         StepVerifier.create(bffController.listarProductos(1L))
-                .expectNext("[]")
+                .assertNext(response -> {
+                    assertEquals(HttpStatus.OK, response.getStatusCode());
+                    assertEquals(productos, response.getBody());
+                })
                 .verifyComplete();
     }
 }

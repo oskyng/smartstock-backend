@@ -37,21 +37,16 @@ public class HttpSecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
-        requestHandler.setCsrfRequestAttributeName("_csrf");
-
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/v1/auth/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html"
+                                "/swagger-ui.html",
+                                "/actuator/**"
                         ).permitAll()
-                        .requestMatchers("/api/v1/usuarios/**").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN_SISTEMA")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

@@ -16,7 +16,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/comercios")
@@ -44,20 +43,11 @@ public class ComercioController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'GERENTE_TIENDA')")
     public ResponseEntity<ComercioResponseDTO> obtenerComercio(
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Comercio-ID", required = false) Long idComercioContexto) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String rol = auth.getAuthorities().iterator().next().getAuthority();
-        
-        // Extraer idComercio de los claims del token si es posible, o pasar null si es ADMIN
-        Long idComercioContexto = null;
-        if (auth.getDetails() instanceof Map) {
-            Map<String, Object> details = (Map<String, Object>) auth.getDetails();
-            Object cid = details.get("idComercio");
-            if (cid != null) {
-                idComercioContexto = Long.valueOf(cid.toString());
-            }
-        }
-        
+
         return ResponseEntity.ok(comercioService.obtenerPorId(id, rol, idComercioContexto));
     }
 
@@ -66,19 +56,11 @@ public class ComercioController {
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'GERENTE_TIENDA')")
     public ResponseEntity<ComercioResponseDTO> actualizarComercio(
             @PathVariable Long id,
-            @Valid @RequestBody ComercioRequestDTO request) {
+            @Valid @RequestBody ComercioRequestDTO request,
+            @RequestHeader(value = "X-Comercio-ID", required = false) Long idComercioContexto) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String rol = auth.getAuthorities().iterator().next().getAuthority();
-        
-        Long idComercioContexto = null;
-        if (auth.getDetails() instanceof Map) {
-            Map<String, Object> details = (Map<String, Object>) auth.getDetails();
-            Object cid = details.get("idComercio");
-            if (cid != null) {
-                idComercioContexto = Long.valueOf(cid.toString());
-            }
-        }
-        
+
         return ResponseEntity.ok(comercioService.updateComercio(id, request, rol, idComercioContexto));
     }
 

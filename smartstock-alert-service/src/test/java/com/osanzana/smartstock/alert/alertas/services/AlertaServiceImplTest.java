@@ -2,7 +2,9 @@ package com.osanzana.smartstock.alert.alertas.services;
 
 import com.osanzana.smartstock.alert.alertas.entities.AlertaAccion;
 import com.osanzana.smartstock.alert.alertas.repositories.AlertaAccionRepository;
+import com.osanzana.smartstock.alert.alertas.stream.AlertaEventProducer;
 import com.osanzana.smartstock.alert.core.entities.*;
+import com.osanzana.smartstock.alert.core.repositories.LoteRepository;
 import com.osanzana.smartstock.alert.core.repositories.UsuarioRepository;
 import com.osanzana.smartstock.alert.shared.dto.response.AlertaResponseDTO;
 import com.osanzana.smartstock.alert.shared.exception.BusinessException;
@@ -30,6 +32,10 @@ class AlertaServiceImplTest {
     private AlertaAccionRepository alertaRepository;
     @Mock
     private UsuarioRepository usuarioRepository;
+    @Mock
+    private LoteRepository loteRepository;
+    @Mock
+    private AlertaEventProducer alertaEventProducer;
 
     @InjectMocks
     private AlertaServiceImpl alertaService;
@@ -42,9 +48,11 @@ class AlertaServiceImplTest {
     @BeforeEach
     void setUp() {
         Comercio comercio = Comercio.builder().id(1L).build();
+        Producto producto = Producto.builder().id(1L).nombre("Producto Test").build();
         lote = LoteInventario.builder()
                 .id(1L)
                 .comercio(comercio)
+                .producto(producto)
                 .fechaVencimiento(LocalDate.now().plusDays(5))
                 .build();
         
@@ -61,6 +69,8 @@ class AlertaServiceImplTest {
 
         alerta = AlertaAccion.builder()
                 .id(1L)
+                .lote(lote)
+                .comercio(comercio)
                 .descripcionAlerta("Test")
                 .estadoAlerta("PENDIENTE")
                 .usuarioAsignado(reponedor)

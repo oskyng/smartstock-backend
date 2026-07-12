@@ -162,7 +162,12 @@
 					"name": "Productos - Obtener por ID",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
 						"url": {
 							"raw": "{{inventoryUrl}}/api/v1/productos/1",
 							"host": [
@@ -363,7 +368,12 @@
 					"name": "Reglas - Eliminar",
 					"request": {
 						"method": "DELETE",
-						"header": [],
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
 						"url": {
 							"raw": "{{financeUrl}}/api/v1/reglas-depreciacion/1",
 							"host": [
@@ -411,7 +421,12 @@
 					"name": "Alertas - Atender (PUT CA-07)",
 					"request": {
 						"method": "PUT",
-						"header": [],
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
 						"url": {
 							"raw": "{{alertUrl}}/api/v1/alertas/1/atender",
 							"host": [
@@ -432,6 +447,27 @@
 		{
 			"name": "05. BFF Facade (8080)",
 			"item": [
+				{
+					"name": "BFF - Stream de Auditoría (SSE)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/audit/stream",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"audit",
+								"stream"
+							]
+						},
+						"description": "Recibe eventos de auditoría en tiempo real (Server-Sent Events). Requiere rol ADMIN_SISTEMA."
+					}
+				},
 				{
 					"name": "BFF - Login",
 					"request": {
@@ -669,7 +705,12 @@
 					"name": "BFF - Obtener Producto",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
 						"url": {
 							"raw": "{{bffUrl}}/api/v1/bff/productos/1",
 							"host": [
@@ -838,7 +879,12 @@
 					"name": "BFF - Eliminar Regla",
 					"request": {
 						"method": "DELETE",
-						"header": [],
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
 						"url": {
 							"raw": "{{bffUrl}}/api/v1/bff/reglas-depreciacion/1",
 							"host": [

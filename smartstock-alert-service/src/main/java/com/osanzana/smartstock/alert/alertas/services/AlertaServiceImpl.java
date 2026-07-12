@@ -39,7 +39,7 @@ public class AlertaServiceImpl implements AlertaService {
     private final LoteRepository loteRepository;
     private final AlertaEventProducer alertaEventProducer;
 
-    @Value("${smartstock.services.finance.url:http://localhost:8084}")
+    @Value("${smartstock.services.finance.url:http://localhost:8083}")
     private String financeServiceUrl;
 
     private final RestClient restClient = RestClient.create();
