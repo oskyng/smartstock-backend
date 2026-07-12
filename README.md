@@ -85,10 +85,10 @@ El sistema impone reglas estrictas de creación de usuarios para mantener la int
 
 | Rol | Alcance | Responsabilidad |
 | :--- | :--- | :--- |
-| **ADMIN_SISTEMA** | Global | Crea Comercios y Gerentes de Tienda. |
-| **GERENTE_TIENDA** | Local | Crea Operadores y Reponedores para su propia tienda. |
-| **OPERADOR_INVENTARIO** | Operativo | Registra lotes y controla ingresos físicos. |
-| **REPONEDOR_SALA** | Operativo | Ejecuta cambios de precio físico y atiende alertas. |
+1. **ADMIN_SISTEMA**: Acceso global. Gestión de comercios y gerentes.
+2. **GERENTE_TIENDA**: Acceso por comercio. Gestión de usuarios operativos (Operador y Reponedor), productos y reglas.
+3. **OPERADOR_INVENTARIO**: Registro de lotes y control de stock.
+4. **REPONEDOR_SALA**: Gestión física de precios y atención de alertas.
 
 ---
 

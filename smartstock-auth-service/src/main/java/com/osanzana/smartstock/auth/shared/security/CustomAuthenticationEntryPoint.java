@@ -22,9 +22,14 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) 
             throws IOException, ServletException {
         
+        String message = "Auth EntryPoint: No autorizado - Token inválido o inexistente";
+        if (authException != null && authException.getMessage() != null) {
+            message = "Auth EntryPoint: No autorizado - " + authException.getMessage();
+        }
+
         ErrorResponse error = ErrorResponse.builder()
                 .status(HttpStatus.UNAUTHORIZED.value())
-                .message("No autorizado: Token inválido o inexistente")
+                .message(message)
                 .timestamp(LocalDateTime.now())
                 .path(request.getRequestURI())
                 .build();

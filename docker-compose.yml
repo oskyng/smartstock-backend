@@ -1,16 +1,4 @@
 services:
-  db:
-    image: gvenzl/oracle-free:latest
-    ports:
-      - "1521:1521"
-    environment:
-      - ORACLE_PASSWORD=password
-    healthcheck:
-      test: ["CMD", "healthcheck.sh"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
   zookeeper:
     image: zookeeper:3.9.2
     environment:
@@ -39,14 +27,15 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      db:
-        condition: service_healthy
       kafka:
         condition: service_started
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@db:1521/FREEPDB1
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@laboratorymanagement_high
+      - SPRING_DATASOURCE_USERNAME=smartstock_db
+      - SPRING_DATASOURCE_PASSWORD=SmartStock.2026!
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SMARTSTOCK_JWT_SECRET=smartstock_super_secret_key_2026_jwt_token_must_be_long_enough
 
   inventory-service:
     build: ./smartstock-inventory-service
@@ -54,14 +43,15 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      db:
-        condition: service_healthy
       kafka:
         condition: service_started
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@db:1521/FREEPDB1
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@laboratorymanagement_high
+      - SPRING_DATASOURCE_USERNAME=smartstock_db
+      - SPRING_DATASOURCE_PASSWORD=SmartStock.2026!
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SMARTSTOCK_JWT_SECRET=smartstock_super_secret_key_2026_jwt_token_must_be_long_enough
 
   finance-service:
     build: ./smartstock-finance-service
@@ -69,14 +59,15 @@ services:
     ports:
       - "8083:8083"
     depends_on:
-      db:
-        condition: service_healthy
       kafka:
         condition: service_started
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@db:1521/FREEPDB1
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@laboratorymanagement_high
+      - SPRING_DATASOURCE_USERNAME=smartstock_db
+      - SPRING_DATASOURCE_PASSWORD=SmartStock.2026!
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SMARTSTOCK_JWT_SECRET=smartstock_super_secret_key_2026_jwt_token_must_be_long_enough
 
   alert-service:
     build: ./smartstock-alert-service
@@ -84,14 +75,27 @@ services:
     ports:
       - "8084:8084"
     depends_on:
-      db:
-        condition: service_healthy
       kafka:
         condition: service_started
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@db:1521/FREEPDB1
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@laboratorymanagement_high
+      - SPRING_DATASOURCE_USERNAME=smartstock_db
+      - SPRING_DATASOURCE_PASSWORD=SmartStock.2026!
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SMARTSTOCK_JWT_SECRET=smartstock_super_secret_key_2026_jwt_token_must_be_long_enough
+
+  commerce-service:
+    build: ./smartstock-commerce-service
+    image: oskyng/smartstock-commerce-service:latest
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@laboratorymanagement_high
+      - SPRING_DATASOURCE_USERNAME=smartstock_db
+      - SPRING_DATASOURCE_PASSWORD=SmartStock.2026!
+      - SMARTSTOCK_JWT_SECRET=smartstock_super_secret_key_2026_jwt_token_must_be_long_enough
 
   bff-service:
     build: ./smartstock-bff-service
@@ -103,9 +107,12 @@ services:
       - inventory-service
       - finance-service
       - alert-service
+      - commerce-service
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SMARTSTOCK_AUTH_SERVICE_URL=http://auth-service:8081
       - SMARTSTOCK_INVENTORY_SERVICE_URL=http://inventory-service:8082
       - SMARTSTOCK_FINANCE_SERVICE_URL=http://finance-service:8083
       - SMARTSTOCK_ALERT_SERVICE_URL=http://alert-service:8084
+      - SMARTSTOCK_COMMERCE_SERVICE_URL=http://commerce-service:8085
+      - SMARTSTOCK_JWT_SECRET=smartstock_super_secret_key_2026_jwt_token_must_be_long_enough

@@ -36,8 +36,8 @@ public class ReglaDepreciacionController {
     public ResponseEntity<ReglaDepreciacionResponseDTO> crear(
             @Valid @RequestBody ReglaDepreciacionRequestDTO dto,
             @RequestHeader("X-Comercio-ID") Long comercioId,
-            Authentication authentication) {
-        String emailGerente = authentication.getName();
+            java.security.Principal principal) {
+        String emailGerente = principal.getName();
         return ResponseEntity.status(HttpStatus.CREATED).body(reglaService.guardar(dto, comercioId, emailGerente));
     }
 

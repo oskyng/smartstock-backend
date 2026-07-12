@@ -36,7 +36,7 @@ public class AuthService {
         UserDetails userDetails = new User(
                 usuario.getEmail(),
                 usuario.getPasswordHash(),
-                Collections.emptyList()
+                Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + usuario.getRol().getNombre()))
         );
 
         Map<String, Object> claims = new HashMap<>();
@@ -52,6 +52,7 @@ public class AuthService {
                 .token(token)
                 .email(usuario.getEmail())
                 .rol(usuario.getRol().getNombre())
+                .idComercio(usuario.getComercio() != null ? usuario.getComercio().getId() : null)
                 .build();
     }
 }

@@ -46,12 +46,13 @@ public class HttpSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/v1/auth/**",
+                                "/api/v1/usuarios/admin",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
                         .requestMatchers("/api/v1/usuarios/**").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
-                        .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMINISTRADOR", "ADMIN_SISTEMA")
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN_SISTEMA")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

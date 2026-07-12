@@ -132,4 +132,24 @@ class LoteServiceImplTest {
         assertFalse(result.isEmpty());
         assertEquals(1, result.size());
     }
+    @Test
+    void guardarLote_Vencido() {
+        requestDTO.setFechaVencimiento(LocalDate.now().minusDays(1));
+        assertThrows(BusinessException.class, () -> loteService.guardarLote(requestDTO, 1L));
+    }
+
+    @Test
+    void guardarLote_ProveedorNotFound() {
+        when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
+        when(proveedorRepository.findById(1L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> loteService.guardarLote(requestDTO, 1L));
+    }
+
+    @Test
+    void guardarLote_ComercioNotFound() {
+        when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
+        when(proveedorRepository.findById(1L)).thenReturn(Optional.of(proveedor));
+        when(comercioRepository.findById(1L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> loteService.guardarLote(requestDTO, 1L));
+    }
 }

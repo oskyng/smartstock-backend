@@ -84,8 +84,8 @@ public class UsuarioService {
         }
 
         if ("GERENTE_TIENDA".equals(rolSolicitante)) {
-            if ("ADMIN_SISTEMA".equals(rolDestino) || "GERENTE_TIENDA".equals(rolDestino)) {
-                throw new UnauthorizedActionException("Un GERENTE_TIENDA no puede crear administradores o gerentes.");
+            if (!"OPERADOR_INVENTARIO".equals(rolDestino) && !"REPONEDOR_SALA".equals(rolDestino)) {
+                throw new UnauthorizedActionException("Un GERENTE_TIENDA solo puede crear roles OPERADOR_INVENTARIO o REPONEDOR_SALA.");
             }
             return;
         }
