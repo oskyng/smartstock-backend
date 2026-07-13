@@ -13,4 +13,5 @@ public class AuthResponseDTO {
     private String token;
     private String email;
     private String rol;
+    private Long idComercio;
 }

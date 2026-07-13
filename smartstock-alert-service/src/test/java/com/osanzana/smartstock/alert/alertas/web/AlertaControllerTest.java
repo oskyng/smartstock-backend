@@ -1,6 +1,7 @@
 package com.osanzana.smartstock.alert.alertas.web;
 
 import com.osanzana.smartstock.alert.alertas.services.AlertaService;
+import com.osanzana.smartstock.alert.shared.dto.response.AlertaAuditoriaResponseDTO;
 import com.osanzana.smartstock.alert.shared.dto.response.AlertaResponseDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,5 +51,27 @@ class AlertaControllerTest {
         assertEquals(1, response.getBody().size());
         assertEquals("Test Alerta", response.getBody().get(0).getMensaje());
         verify(alertaService).listarPendientesPorComercio(1L);
+    }
+
+    @Test
+    void listarAuditoria_Success() {
+        AlertaAuditoriaResponseDTO auditoriaDTO = AlertaAuditoriaResponseDTO.builder()
+                .id(1L)
+                .loteId(10L)
+                .productoNombre("Leche Entera")
+                .codigoBarra("7801234500019")
+                .usuarioAsignadoId(2L)
+                .usuarioAsignadoNombre("Diego Silva")
+                .estadoAlerta("ESCALADA_AL_GERENTE")
+                .build();
+        when(alertaService.listarAuditoriaPorComercio(1L)).thenReturn(Collections.singletonList(auditoriaDTO));
+
+        ResponseEntity<List<AlertaAuditoriaResponseDTO>> response = alertaController.listarAuditoria(1L);
+
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(1, response.getBody().size());
+        assertEquals("Leche Entera", response.getBody().get(0).getProductoNombre());
+        verify(alertaService).listarAuditoriaPorComercio(1L);
     }
 }

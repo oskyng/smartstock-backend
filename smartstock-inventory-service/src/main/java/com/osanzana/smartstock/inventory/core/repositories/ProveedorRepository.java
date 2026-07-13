@@ -10,4 +10,5 @@ import java.util.Optional;
 @Repository
 public interface ProveedorRepository extends JpaRepository<Proveedor, Long> {
     Optional<Proveedor> findByRutEmpresa(String rutEmpresa);
+    List<Proveedor> findByComercioId(Long comercioId);
 }

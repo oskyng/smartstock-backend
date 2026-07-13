@@ -24,6 +24,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtils jwtUtils;
 
     @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+        return false;
+    }
+
+    @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
@@ -43,10 +48,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             username = jwtUtils.extractUsername(jwt);
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                if (jwtUtils.validateToken(jwt)) {
+                if (jwtUtils.isTokenValid(jwt)) {
                     List<String> roles = jwtUtils.extractRoles(jwt);
+                    Long tokenComercioId = jwtUtils.extractIdComercio(jwt);
+                    String headerComercioId = request.getHeader("X-Comercio-ID");
+
+                    logger.debug("JWT válido para usuario: " + username + ". Roles: " + roles + ". idComercio: " + tokenComercioId);
+
+                    // Validación Multi-tenant
+                    boolean isAdmin = roles.contains("ADMIN_SISTEMA");
+                    if (!isAdmin) {
+                        if (headerComercioId == null || headerComercioId.isEmpty()) {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\": \"Header X-Comercio-ID es requerido para este rol\"}");
+                            return;
+                        }
+                        try {
+                            Long hId = Long.parseLong(headerComercioId);
+                            if (tokenComercioId == null || !tokenComercioId.equals(hId)) {
+                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                response.setContentType("application/json");
+                                response.getWriter().write("{\"error\": \"Acceso denegado: idComercio no coincide con el comercio solicitado\"}");
+                                return;
+                            }
+                        } catch (NumberFormatException e) {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\": \"Header X-Comercio-ID invalido\"}");
+                            return;
+                        }
+                    }
+
                     List<SimpleGrantedAuthority> authorities = roles.stream()
-                            .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                            .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
+                            .map(SimpleGrantedAuthority::new)
                             .collect(Collectors.toList());
 
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
@@ -59,9 +95,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
-            // Token inválido o expirado, ignorar y dejar que Security maneje el 403
+            logger.error("Error al procesar el token JWT en BFF: " + e.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"BFF Filter: Token invalido o expirado - " + e.getMessage() + "\"}");
+            return;
         }
-        
+
         filterChain.doFilter(request, response);
     }
 }

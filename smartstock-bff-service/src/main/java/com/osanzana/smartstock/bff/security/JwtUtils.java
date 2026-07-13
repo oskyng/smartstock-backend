@@ -15,7 +15,7 @@ import java.util.function.Function;
 @Component
 public class JwtUtils {
 
-    @Value("${smartstock.jwt.secret:smartstock_super_secret_key_2026_jwt_token}")
+    @Value("${smartstock.jwt.secret:smartstock_super_secret_key_2026_jwt_token_must_be_long_enough}")
     private String secret;
 
     private SecretKey getSigningKey() {
@@ -30,10 +30,33 @@ public class JwtUtils {
     public List<String> extractRoles(String token) {
         return extractClaim(token, claims -> {
             Object roles = claims.get("rol");
+            if (roles == null) {
+                return java.util.Collections.emptyList();
+            }
             if (roles instanceof String) {
                 return List.of((String) roles);
             }
             return (List<String>) roles;
+        });
+    }
+
+    public Long extractIdComercio(String token) {
+        return extractClaim(token, claims -> {
+            Object idComercio = claims.get("idComercio");
+            if (idComercio == null) {
+                return null;
+            }
+            if (idComercio instanceof Integer) {
+                return ((Integer) idComercio).longValue();
+            }
+            if (idComercio instanceof Long) {
+                return (Long) idComercio;
+            }
+            String value = idComercio.toString().trim();
+            if (value.isEmpty()) {
+                return null;
+            }
+            return Long.parseLong(value);
         });
     }
 
@@ -51,7 +74,15 @@ public class JwtUtils {
     }
 
     public Boolean validateToken(String token) {
-        return !isTokenExpired(token);
+        try {
+            return !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean isTokenValid(String token) {
+        return validateToken(token);
     }
 
     private Boolean isTokenExpired(String token) {

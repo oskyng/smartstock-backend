@@ -12,13 +12,14 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
 @Component
 public class JwtUtils {
 
-    @Value("${smartstock.jwt.secret:smartstock_super_secret_key_2026_jwt_token}")
+    @Value("${smartstock.jwt.secret:smartstock_super_secret_key_2026_jwt_token_must_be_long_enough}")
     private String secret;
 
     @Value("${smartstock.jwt.expiration:86400000}")
@@ -37,12 +38,26 @@ public class JwtUtils {
         return claimsResolver.apply(claims);
     }
 
-    private Claims extractAllClaims(String token) {
+    public Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> extractRoles(String token) {
+        return extractClaim(token, claims -> {
+            Object roles = claims.get("rol");
+            if (roles == null) {
+                return java.util.Collections.emptyList();
+            }
+            if (roles instanceof String) {
+                return List.of((String) roles);
+            }
+            return (List<String>) roles;
+        });
     }
 
     public String generateToken(UserDetails userDetails, Map<String, Object> extraClaims) {
@@ -57,7 +72,10 @@ public class JwtUtils {
 
     public Boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        if (userDetails != null) {
+            return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        }
+        return !isTokenExpired(token);
     }
 
     private Boolean isTokenExpired(String token) {

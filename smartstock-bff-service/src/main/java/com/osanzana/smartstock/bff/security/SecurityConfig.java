@@ -1,15 +1,37 @@
 package com.osanzana.smartstock.bff.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.osanzana.smartstock.bff.dto.ErrorResponseDTO;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 
 @Configuration
 @EnableWebSecurity
@@ -18,19 +40,64 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final ObjectMapper objectMapper;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        // A. Acceso público
                         .requestMatchers(
                                 "/api/v1/bff/auth/login",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
+
+                        // B. [ADMIN_SISTEMA] - Gestión global de comercios (Commerce Service)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/comercios/**").hasRole("ADMIN_SISTEMA")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bff/comercios/**").hasRole("ADMIN_SISTEMA")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/bff/comercios/**").hasRole("ADMIN_SISTEMA")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/bff/comercios/**").hasRole("ADMIN_SISTEMA")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bff/usuarios").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/usuarios").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/bff/usuarios/**").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/bff/usuarios/**").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/roles").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
+
+                        // C. [GERENTE_TIENDA] - Dashboard y reglas de depreciación
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/dashboard").hasRole("GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/reglas-depreciacion/**").hasRole("GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bff/reglas-depreciacion/**").hasRole("GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/bff/reglas-depreciacion/**").hasRole("GERENTE_TIENDA")
+
+                        // D. [OPERADOR_INVENTARIO] - Productos e inventario de lotes
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/productos/**").hasRole("OPERADOR_INVENTARIO")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bff/productos/**").hasRole("OPERADOR_INVENTARIO")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/categorias/**").hasAnyRole("OPERADOR_INVENTARIO", "GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bff/categorias/**").hasAnyRole("OPERADOR_INVENTARIO", "GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/proveedores/**").hasAnyRole("OPERADOR_INVENTARIO", "GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bff/proveedores/**").hasAnyRole("OPERADOR_INVENTARIO", "GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/inventario/lotes/**").hasRole("OPERADOR_INVENTARIO")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bff/inventario/lotes/**").hasRole("OPERADOR_INVENTARIO")
+
+                        // E. [REPONEDOR_SALA] - Alertas de sala
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/alertas").hasRole("REPONEDOR_SALA")
+
+                        // E2. [GERENTE_TIENDA] - Panel de control y auditoría de alertas
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/alertas/auditoria").hasRole("GERENTE_TIENDA")
+
+                        // F. Resolución de alarmas (CA-07) - Operación compartida
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/bff/alertas/*/atender")
+                        .hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA", "REPONEDOR_SALA")
+
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(authenticationEntryPoint())
+                        .accessDeniedHandler(accessDeniedHandler())
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -38,5 +105,60 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public AuthenticationEntryPoint authenticationEntryPoint() {
+        return (request, response, authException) -> {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            ErrorResponseDTO error = ErrorResponseDTO.builder()
+                    .status(HttpStatus.UNAUTHORIZED.value())
+                    .message("BFF EntryPoint: No autorizado - " + authException.getMessage())
+                    .timestamp(LocalDateTime.now())
+                    .path(request.getRequestURI())
+                    .build();
+            response.getWriter().write(objectMapper.writeValueAsString(error));
+        };
+    }
+
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler() {
+        return (request, response, accessDeniedException) -> {
+            response.setStatus(HttpStatus.FORBIDDEN.value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            ErrorResponseDTO error = ErrorResponseDTO.builder()
+                    .status(HttpStatus.FORBIDDEN.value())
+                    .message("Acceso denegado: No tiene permisos suficientes")
+                    .timestamp(LocalDateTime.now())
+                    .path(request.getRequestURI())
+                    .build();
+            response.getWriter().write(objectMapper.writeValueAsString(error));
+        };
+    }
+
+    private static final class CsrfCookieFilter extends OncePerRequestFilter {
+        @Override
+        protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
+                throws ServletException, IOException {
+            CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+            if (csrfToken != null) {
+                csrfToken.getToken();
+            }
+            filterChain.doFilter(request, response);
+        }
+    }
+
+    @Bean
+    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Collections.singletonList("*")); // En producción, especificar el dominio de Angular
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Comercio-ID"));
+        configuration.setExposedHeaders(Collections.singletonList("Authorization"));
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

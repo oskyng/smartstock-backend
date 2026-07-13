@@ -1,0 +1,13 @@
+package com.osanzana.smartstock.bff.dto;
+
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+public class ProveedorResponseDTO {
+    private Long id;
+    private String rutEmpresa;
+    private String razonSocial;
+    private String contactoEmail;
+}

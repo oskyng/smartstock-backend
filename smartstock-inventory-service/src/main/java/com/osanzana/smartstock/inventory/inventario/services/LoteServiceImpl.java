@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,12 @@ public class LoteServiceImpl implements LoteService {
     @Transactional
     public LoteResponseDTO guardarLote(LoteRequestDTO dto, Long comercioId) {
         log.info("Guardando lote para producto {} y comercio {}", dto.getIdProducto(), comercioId);
+
+        // Validación de Negocio: Fecha de Vencimiento Crítica (CA-03)
+        if (!dto.getFechaVencimiento().isAfter(LocalDate.now())) {
+            log.error("Rechazo de lote: La fecha de vencimiento ({}) debe ser posterior a la fecha actual.", dto.getFechaVencimiento());
+            throw new BusinessException("Control de mermas: No se permiten lotes vencidos o por vencer hoy. Fecha ingresada: " + dto.getFechaVencimiento());
+        }
 
         Producto producto = productoRepository.findById(dto.getIdProducto())
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));

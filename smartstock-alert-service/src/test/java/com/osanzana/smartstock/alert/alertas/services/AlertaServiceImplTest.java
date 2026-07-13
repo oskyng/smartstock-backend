@@ -2,8 +2,11 @@ package com.osanzana.smartstock.alert.alertas.services;
 
 import com.osanzana.smartstock.alert.alertas.entities.AlertaAccion;
 import com.osanzana.smartstock.alert.alertas.repositories.AlertaAccionRepository;
+import com.osanzana.smartstock.alert.alertas.stream.AlertaEventProducer;
 import com.osanzana.smartstock.alert.core.entities.*;
+import com.osanzana.smartstock.alert.core.repositories.LoteRepository;
 import com.osanzana.smartstock.alert.core.repositories.UsuarioRepository;
+import com.osanzana.smartstock.alert.shared.dto.response.AlertaAuditoriaResponseDTO;
 import com.osanzana.smartstock.alert.shared.dto.response.AlertaResponseDTO;
 import com.osanzana.smartstock.alert.shared.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +34,10 @@ class AlertaServiceImplTest {
     private AlertaAccionRepository alertaRepository;
     @Mock
     private UsuarioRepository usuarioRepository;
+    @Mock
+    private LoteRepository loteRepository;
+    @Mock
+    private AlertaEventProducer alertaEventProducer;
 
     @InjectMocks
     private AlertaServiceImpl alertaService;
@@ -42,14 +50,18 @@ class AlertaServiceImplTest {
     @BeforeEach
     void setUp() {
         Comercio comercio = Comercio.builder().id(1L).build();
+        Producto producto = Producto.builder().id(1L).nombre("Producto Test").codigoBarra("7801234500019").build();
         lote = LoteInventario.builder()
                 .id(1L)
                 .comercio(comercio)
+                .producto(producto)
                 .fechaVencimiento(LocalDate.now().plusDays(5))
                 .build();
         
         reponedor = Usuario.builder()
                 .id(2L)
+                .nombre("Diego")
+                .apellido("Silva")
                 .rol(Rol.builder().nombre("REPONEDOR_SALA").build())
                 .build();
 
@@ -61,6 +73,8 @@ class AlertaServiceImplTest {
 
         alerta = AlertaAccion.builder()
                 .id(1L)
+                .lote(lote)
+                .comercio(comercio)
                 .descripcionAlerta("Test")
                 .estadoAlerta("PENDIENTE")
                 .usuarioAsignado(reponedor)
@@ -97,12 +111,25 @@ class AlertaServiceImplTest {
     }
 
     @Test
-    void atenderAlerta_Success() {
+    void atenderAlerta_ATiempo_Success() {
+        alerta.setFechaLimiteAtencion(LocalDateTime.now().plusHours(1));
         when(alertaRepository.findById(1L)).thenReturn(Optional.of(alerta));
 
         alertaService.atenderAlerta(1L);
 
-        assertEquals("ATENDIDA", alerta.getEstadoAlerta());
+        assertEquals("ATENDIDA_A_TIEMPO", alerta.getEstadoAlerta());
+        assertNotNull(alerta.getFechaAtencion());
+        verify(alertaRepository).save(alerta);
+    }
+
+    @Test
+    void atenderAlerta_ConRetraso_Success() {
+        alerta.setFechaLimiteAtencion(LocalDateTime.now().minusHours(1));
+        when(alertaRepository.findById(1L)).thenReturn(Optional.of(alerta));
+
+        alertaService.atenderAlerta(1L);
+
+        assertEquals("ATENDIDA_CON_RETRASO", alerta.getEstadoAlerta());
         assertNotNull(alerta.getFechaAtencion());
         verify(alertaRepository).save(alerta);
     }
@@ -114,7 +141,35 @@ class AlertaServiceImplTest {
 
         alertaService.procesarEscalamientoSLA();
 
-        assertEquals("ESCALADA", alerta.getEstadoAlerta());
+        assertEquals("ESCALADA_AL_GERENTE", alerta.getEstadoAlerta());
         verify(alertaRepository).save(alerta);
+    }
+
+    @Test
+    void listarAuditoriaPorComercio_Success() {
+        when(alertaRepository.findByComercioId(1L)).thenReturn(Collections.singletonList(alerta));
+
+        List<AlertaAuditoriaResponseDTO> result = alertaService.listarAuditoriaPorComercio(1L);
+
+        assertEquals(1, result.size());
+        AlertaAuditoriaResponseDTO dto = result.get(0);
+        assertEquals(1L, dto.getId());
+        assertEquals(1L, dto.getLoteId());
+        assertEquals("Producto Test", dto.getProductoNombre());
+        assertEquals("7801234500019", dto.getCodigoBarra());
+        assertEquals(2L, dto.getUsuarioAsignadoId());
+        assertEquals("Diego Silva", dto.getUsuarioAsignadoNombre());
+        assertEquals("PENDIENTE", dto.getEstadoAlerta());
+    }
+
+    @Test
+    void listarAuditoriaPorComercio_SinAsignado() {
+        alerta.setUsuarioAsignado(null);
+        when(alertaRepository.findByComercioId(1L)).thenReturn(Collections.singletonList(alerta));
+
+        List<AlertaAuditoriaResponseDTO> result = alertaService.listarAuditoriaPorComercio(1L);
+
+        assertNull(result.get(0).getUsuarioAsignadoId());
+        assertEquals("Sin asignar", result.get(0).getUsuarioAsignadoNombre());
     }
 }

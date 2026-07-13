@@ -1,0 +1,1113 @@
+{
+	"info": {
+		"_postman_id": "smartstock-complete-collection-v1",
+		"name": "SmartStock - Colección Completa",
+		"description": "Colección integral de todos los microservicios de SmartStock: Auth, Inventario, Finanzas, Alertas y BFF.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "01. Auth Service (8081)",
+			"item": [
+				{
+					"name": "Auth - Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.token) {",
+									"    pm.environment.set(\"jwt_token\", jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@smartstock.cl\",\n    \"password\": \"Admin123*\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authUrl}}/api/v1/auth/login",
+							"host": [
+								"{{authUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						}
+					}
+				},
+				{
+					"name": "Usuarios - Crear Admin",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"rut\": \"11.111.111-1\",\n    \"nombre\": \"Admin\",\n    \"apellido\": \"Secundario\",\n    \"email\": \"admin2@smartstock.cl\",\n    \"password\": \"SecurePass123*\",\n    \"idComercio\": null\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authUrl}}/api/v1/usuarios/admin",
+							"host": [
+								"{{authUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"usuarios",
+								"admin"
+							]
+						}
+					}
+				},
+				{
+					"name": "Usuarios - Crear Operativo (CA-02)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"rut\": \"99.999.999-9\",\n    \"nombre\": \"Test\",\n    \"apellido\": \"User\",\n    \"email\": \"reponedor.test@tienda.cl\",\n    \"password\": \"Pass123*\",\n    \"idRol\": 4,\n    \"idComercio\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{authUrl}}/api/v1/usuarios",
+							"host": [
+								"{{authUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"usuarios"
+							]
+						}
+					}
+				},
+				{
+					"name": "Comercios - Listar (DEPRECATED - Usar Commerce Service o BFF)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{authUrl}}/api/v1/comercios",
+							"host": [
+								"{{authUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"comercios"
+							]
+						},
+						"description": "Endpoint en Auth Service ahora obsoleto. Usar el del Commerce Service o el BFF."
+					}
+				}
+			]
+		},
+		{
+			"name": "02. Inventory Service (8082)",
+			"item": [
+				{
+					"name": "Productos - Listar",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"url": {
+							"raw": "{{inventoryUrl}}/api/v1/productos",
+							"host": [
+								"{{inventoryUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"productos"
+							]
+						}
+					}
+				},
+				{
+					"name": "Productos - Obtener por ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"url": {
+							"raw": "{{inventoryUrl}}/api/v1/productos/1",
+							"host": [
+								"{{inventoryUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"productos",
+								"1"
+							]
+						}
+					}
+				},
+				{
+					"name": "Productos - Crear",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"codigoBarra\": \"7801234567890\",\n    \"nombre\": \"Nuevo Producto\",\n    \"idCategoria\": 1,\n    \"precioBase\": 1000.00\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{inventoryUrl}}/api/v1/productos",
+							"host": [
+								"{{inventoryUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"productos"
+							]
+						}
+					}
+				},
+				{
+					"name": "Lotes - Registrar Válido (CA-04)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"idProducto\": 1,\n    \"idProveedor\": 1,\n    \"cantidadInicial\": 100,\n    \"costoUnitario\": 800.00,\n    \"precioDinamico\": 1000.00,\n    \"fechaVencimiento\": \"2026-10-10\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{inventoryUrl}}/api/v1/inventario/lotes",
+							"host": [
+								"{{inventoryUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"inventario",
+								"lotes"
+							]
+						}
+					}
+				},
+				{
+					"name": "Lotes - Registrar Vencido (FALLO CA-03)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"idProducto\": 1,\n    \"idProveedor\": 1,\n    \"cantidadInicial\": 10,\n    \"costoUnitario\": 800.00,\n    \"precioDinamico\": 1000.00,\n    \"fechaVencimiento\": \"2020-01-01\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{inventoryUrl}}/api/v1/inventario/lotes",
+							"host": [
+								"{{inventoryUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"inventario",
+								"lotes"
+							]
+						}
+					}
+				},
+				{
+					"name": "Lotes - Listar por Comercio",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"url": {
+							"raw": "{{inventoryUrl}}/api/v1/inventario/lotes",
+							"host": [
+								"{{inventoryUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"inventario",
+								"lotes"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "03. Finance Service (8084)",
+			"item": [
+				{
+					"name": "Reglas - Listar",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"url": {
+							"raw": "{{financeUrl}}/api/v1/reglas-depreciacion",
+							"host": [
+								"{{financeUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reglas-depreciacion"
+							]
+						}
+					}
+				},
+				{
+					"name": "Reglas - Crear Nueva",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"idCategoria\": 1,\n    \"diasCriticosMin\": 10,\n    \"porcentajeDescuento\": 25.00\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{financeUrl}}/api/v1/reglas-depreciacion",
+							"host": [
+								"{{financeUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reglas-depreciacion"
+							]
+						}
+					}
+				},
+				{
+					"name": "Reglas - Eliminar",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"url": {
+							"raw": "{{financeUrl}}/api/v1/reglas-depreciacion/1",
+							"host": [
+								"{{financeUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reglas-depreciacion",
+								"1"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "04. Alert Service (8083)",
+			"item": [
+				{
+					"name": "Alertas - Listar Pendientes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"url": {
+							"raw": "{{alertUrl}}/api/v1/alertas/pendientes",
+							"host": [
+								"{{alertUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"alertas",
+								"pendientes"
+							]
+						}
+					}
+				},
+				{
+					"name": "Alertas - Atender (PUT CA-07)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"url": {
+							"raw": "{{alertUrl}}/api/v1/alertas/1/atender",
+							"host": [
+								"{{alertUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"alertas",
+								"1",
+								"atender"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "05. BFF Facade (8080)",
+			"item": [
+				{
+					"name": "BFF - Stream de Auditoría (SSE)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/audit/stream",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"audit",
+								"stream"
+							]
+						},
+						"description": "Recibe eventos de auditoría en tiempo real (Server-Sent Events). Requiere rol ADMIN_SISTEMA."
+					}
+				},
+				{
+					"name": "BFF - Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@smartstock.cl\",\n    \"password\": \"Admin123*\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/auth/login",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"auth",
+								"login"
+							]
+						}
+					}
+				},
+				{
+					"name": "BFF - Crear Usuario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1",
+								"description": "Obligatorio para GERENTE_TIENDA al crear roles operativos"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"rut\": \"12.345.678-9\",\n    \"nombre\": \"Nombre\",\n    \"apellido\": \"Usuario\",\n    \"email\": \"nuevo.usuario@tienda.cl\",\n    \"password\": \"Pass123*\",\n    \"idRol\": 3,\n    \"idComercio\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/usuarios",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"usuarios"
+							]
+						},
+						"description": "Crea un nuevo usuario. ADMIN_SISTEMA puede crear GERENTE_TIENDA. GERENTE_TIENDA puede crear roles operativos en su comercio."
+					}
+				},
+				{
+					"name": "Comercios - Listar",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/comercios",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"comercios"
+							]
+						},
+						"description": "Lista todos los comercios registrados. Requiere rol ADMIN_SISTEMA."
+					}
+				},
+				{
+					"name": "Comercios - Obtener por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/comercios/1",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"comercios",
+								"1"
+							]
+						},
+						"description": "Obtiene detalles de un comercio. Requiere rol ADMIN_SISTEMA o GERENTE_TIENDA (si es su comercio)."
+					}
+				},
+				{
+					"name": "Comercios - Crear",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"rutEmpresa\": \"76.999.888-7\",\n    \"razonSocial\": \"Nuevo Comercio BFF\",\n    \"rubro\": \"Alimentos\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/comercios",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"comercios"
+							]
+						},
+						"description": "Crea un nuevo comercio. Requiere rol ADMIN_SISTEMA."
+					}
+				},
+				{
+					"name": "Comercios - Actualizar",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"rutEmpresa\": \"76.999.888-7\",\n    \"razonSocial\": \"Comercio BFF Actualizado\",\n    \"rubro\": \"Alimentos\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/comercios/1",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"comercios",
+								"1"
+							]
+						},
+						"description": "Actualiza un comercio existente. Requiere rol ADMIN_SISTEMA o GERENTE_TIENDA (si es su comercio)."
+					}
+				},
+				{
+					"name": "Comercios - Eliminar",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/comercios/1",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"comercios",
+								"1"
+							]
+						},
+						"description": "Elimina un comercio. Requiere rol ADMIN_SISTEMA."
+					}
+				},
+				{
+					"name": "BFF - Dashboard Consolidado",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/dashboard",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"dashboard"
+							]
+						}
+					}
+				},
+				{
+					"name": "BFF - Listar Productos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/productos",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"productos"
+							]
+						}
+					}
+				},
+				{
+					"name": "BFF - Obtener Producto",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/productos/1",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"productos",
+								"1"
+							]
+						}
+					}
+				},
+				{
+					"name": "BFF - Crear Producto",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"codigoBarra\": \"7801234567891\",\n    \"nombre\": \"Producto BFF\",\n    \"idCategoria\": 1,\n    \"precioBase\": 5000.00\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/productos",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"productos"
+							]
+						}
+					}
+				},
+				{
+					"name": "BFF - Listar Lotes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/inventario/lotes",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"inventario",
+								"lotes"
+							]
+						}
+					}
+				},
+				{
+					"name": "BFF - Crear Lote",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"idProducto\": 1,\n    \"idProveedor\": 1,\n    \"cantidadInicial\": 50,\n    \"costoUnitario\": 4000.00,\n    \"precioDinamico\": 5000.00,\n    \"fechaVencimiento\": \"2026-12-01\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/inventario/lotes",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"inventario",
+								"lotes"
+							]
+						}
+					}
+				},
+				{
+					"name": "BFF - Listar Reglas",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/reglas-depreciacion",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"reglas-depreciacion"
+							]
+						}
+					}
+				},
+				{
+					"name": "BFF - Crear Regla",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"idCategoria\": 1,\n    \"diasCriticosMin\": 3,\n    \"porcentajeDescuento\": 50.00\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/reglas-depreciacion",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"reglas-depreciacion"
+							]
+						}
+					}
+				},
+				{
+					"name": "BFF - Eliminar Regla",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/reglas-depreciacion/1",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"reglas-depreciacion",
+								"1"
+							]
+						}
+					}
+				},
+				{
+					"name": "BFF - Listar Alertas",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Comercio-ID",
+								"value": "1"
+							}
+						],
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/alertas",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"alertas"
+							]
+						}
+					}
+				},
+				{
+					"name": "BFF - Atender Alerta (PUT CA-07)",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{bffUrl}}/api/v1/bff/alertas/1/atender",
+							"host": [
+								"{{bffUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bff",
+								"alertas",
+								"1",
+								"atender"
+							]
+						},
+						"description": "Marca una alerta como atendida. Requiere rol ADMIN_SISTEMA, GERENTE_TIENDA o REPONEDOR_SALA."
+					}
+				}
+			]
+		},
+		{
+			"name": "06. Commerce Service (8085)",
+			"item": [
+				{
+					"name": "Comercios - Crear",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"rutEmpresa\": \"76.123.456-7\",\n    \"razonSocial\": \"Comercio de Prueba S.A.\",\n    \"rubro\": \"Retail\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{commerceUrl}}/api/v1/comercios",
+							"host": [
+								"{{commerceUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"comercios"
+							]
+						},
+						"description": "Crea un nuevo comercio. Requiere rol ADMIN_SISTEMA."
+					}
+				},
+				{
+					"name": "Comercios - Listar",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{commerceUrl}}/api/v1/comercios",
+							"host": [
+								"{{commerceUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"comercios"
+							]
+						},
+						"description": "Lista todos los comercios. Requiere rol ADMIN_SISTEMA."
+					}
+				},
+				{
+					"name": "Comercios - Obtener por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{commerceUrl}}/api/v1/comercios/1",
+							"host": [
+								"{{commerceUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"comercios",
+								"1"
+							]
+						},
+						"description": "Obtiene detalles de un comercio. Requiere rol ADMIN_SISTEMA o GERENTE_TIENDA (si es su comercio)."
+					}
+				},
+				{
+					"name": "Comercios - Actualizar",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"rutEmpresa\": \"76.123.456-7\",\n    \"razonSocial\": \"Comercio Actualizado S.A.\",\n    \"rubro\": \"Retail Modificado\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{commerceUrl}}/api/v1/comercios/1",
+							"host": [
+								"{{commerceUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"comercios",
+								"1"
+							]
+						},
+						"description": "Actualiza un comercio. Requiere rol ADMIN_SISTEMA o GERENTE_TIENDA (si es su comercio)."
+					}
+				},
+				{
+					"name": "Comercios - Eliminar",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{commerceUrl}}/api/v1/comercios/1",
+							"host": [
+								"{{commerceUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"comercios",
+								"1"
+							]
+						},
+						"description": "Elimina un comercio. Requiere rol ADMIN_SISTEMA."
+					}
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "authUrl",
+			"value": "http://localhost:8081"
+		},
+		{
+			"key": "inventoryUrl",
+			"value": "http://localhost:8082"
+		},
+		{
+			"key": "alertUrl",
+			"value": "http://localhost:8083"
+		},
+		{
+			"key": "financeUrl",
+			"value": "http://localhost:8084"
+		},
+		{
+			"key": "commerceUrl",
+			"value": "http://localhost:8085"
+		},
+		{
+			"key": "bffUrl",
+			"value": "http://localhost:8080"
+		},
+		{
+			"key": "jwt_token",
+			"value": ""
+		}
+	]
+}

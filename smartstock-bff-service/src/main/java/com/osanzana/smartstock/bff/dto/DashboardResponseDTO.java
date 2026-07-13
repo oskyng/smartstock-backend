@@ -5,13 +5,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class DashboardResponseDTO {
-    private Object productos;
-    private Object lotesRecientes;
-    private Object alertasPendientes;
-    private Object reglasActivas;
+    private List<ProductoResponseDTO> productos;
+    private List<LoteResponseDTO> lotesRecientes;
+    private List<AlertaResponseDTO> alertasPendientes;
+    private List<ReglaDepreciacionResponseDTO> reglasActivas;
 }
