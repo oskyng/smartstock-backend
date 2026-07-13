@@ -10,6 +10,7 @@ import com.osanzana.smartstock.alert.core.entities.LoteInventario;
 import com.osanzana.smartstock.alert.core.repositories.LoteRepository;
 import com.osanzana.smartstock.alert.shared.dto.events.AlertaEscaladaEvent;
 import com.osanzana.smartstock.alert.shared.dto.events.LoteEventDTO;
+import com.osanzana.smartstock.alert.shared.dto.response.AlertaAuditoriaResponseDTO;
 import com.osanzana.smartstock.alert.shared.dto.response.AlertaResponseDTO;
 import com.osanzana.smartstock.alert.shared.dto.response.ReglaDepreciacionResponseDTO;
 import com.osanzana.smartstock.alert.shared.exception.BusinessException;
@@ -73,6 +74,15 @@ public class AlertaServiceImpl implements AlertaService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<AlertaAuditoriaResponseDTO> listarAuditoriaPorComercio(Long comercioId) {
+        log.info("Listando auditoría de alertas para el comercio {}", comercioId);
+        return alertaRepository.findByComercioId(comercioId).stream()
+                .map(this::mapToAuditoriaResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public void generarAlertaDescuento(LoteInventario lote, ReglaDepreciacion regla) {
         log.info("Generando alerta de descuento para lote {} en comercio {}", lote.getId(), lote.getComercio().getId());
@@ -110,11 +120,15 @@ public class AlertaServiceImpl implements AlertaService {
     public void atenderAlerta(Long alertaId) {
         AlertaAccion alerta = alertaRepository.findById(alertaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Alerta no encontrada con ID: " + alertaId));
-        
-        alerta.setEstadoAlerta("ATENDIDA");
-        alerta.setFechaAtencion(LocalDateTime.now());
+
+        LocalDateTime ahora = LocalDateTime.now();
+        boolean conRetraso = alerta.getFechaLimiteAtencion() != null && ahora.isAfter(alerta.getFechaLimiteAtencion());
+        String estadoFinal = conRetraso ? "ATENDIDA_CON_RETRASO" : "ATENDIDA_A_TIEMPO";
+
+        alerta.setEstadoAlerta(estadoFinal);
+        alerta.setFechaAtencion(ahora);
         alertaRepository.save(alerta);
-        log.info("Alerta {} marcada como ATENDIDA", alertaId);
+        log.info("Alerta {} marcada como {}", alertaId, estadoFinal);
     }
 
     @Override
@@ -125,7 +139,7 @@ public class AlertaServiceImpl implements AlertaService {
         
         expiradas.forEach(alerta -> {
             log.warn("Escalando alerta {} por vencimiento de SLA", alerta.getId());
-            alerta.setEstadoAlerta("ESCALADA");
+            alerta.setEstadoAlerta("ESCALADA_AL_GERENTE");
             alertaRepository.save(alerta);
 
             // Notificar vía Kafka
@@ -214,6 +228,22 @@ public class AlertaServiceImpl implements AlertaService {
                 .fechaLimite(alerta.getFechaLimiteAtencion())
                 .estado(alerta.getEstadoAlerta())
                 .fechaCreacion(alerta.getFechaNotificacion())
+                .build();
+    }
+
+    private AlertaAuditoriaResponseDTO mapToAuditoriaResponseDTO(AlertaAccion alerta) {
+        Usuario asignado = alerta.getUsuarioAsignado();
+        return AlertaAuditoriaResponseDTO.builder()
+                .id(alerta.getId())
+                .loteId(alerta.getLote().getId())
+                .productoNombre(alerta.getLote().getProducto().getNombre())
+                .codigoBarra(alerta.getLote().getProducto().getCodigoBarra())
+                .usuarioAsignadoId(asignado != null ? asignado.getId() : null)
+                .usuarioAsignadoNombre(asignado != null ? asignado.getNombre() + " " + asignado.getApellido() : "Sin asignar")
+                .estadoAlerta(alerta.getEstadoAlerta())
+                .fechaLimiteAtencion(alerta.getFechaLimiteAtencion())
+                .fechaAtencion(alerta.getFechaAtencion())
+                .descripcionAlerta(alerta.getDescripcionAlerta())
                 .build();
     }
 }

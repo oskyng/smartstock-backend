@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,7 +31,7 @@ public class BffController {
 
     @Operation(summary = "Stream de auditoría en tiempo real (SSE)", security = @SecurityRequirement(name = "bearerAuth"))
     @GetMapping(value = "/audit/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<AlertaEscaladaEvent> getAuditStream() {
+    public Flux<ServerSentEvent<AlertaEscaladaEvent>> getAuditStream() {
         return auditStreamService.getAuditStream();
     }
 
@@ -48,6 +49,45 @@ public class BffController {
             @RequestHeader(value = "X-Comercio-ID", required = false) Long comercioId,
             @Valid @RequestBody UsuarioRequestDTO usuarioRequest) {
         return client.crearUsuario(usuarioRequest, comercioId);
+    }
+
+    @Operation(summary = "Listar usuarios del comercio (para actualizar o eliminar)", security = @SecurityRequirement(name = "bearerAuth"))
+    @GetMapping("/usuarios")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'GERENTE_TIENDA')")
+    public Mono<ResponseEntity<List<UsuarioResponseDTO>>> listarUsuarios(
+            @RequestHeader(value = "X-Comercio-ID", required = false) Long comercioId) {
+        return client.listarUsuarios(comercioId)
+                .map(ResponseEntity::ok);
+    }
+
+    @Operation(summary = "Actualizar usuario", security = @SecurityRequirement(name = "bearerAuth"))
+    @PutMapping("/usuarios/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'GERENTE_TIENDA')")
+    public Mono<ResponseEntity<UsuarioResponseDTO>> actualizarUsuario(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Comercio-ID", required = false) Long comercioId,
+            @Valid @RequestBody UsuarioUpdateRequestDTO usuarioRequest) {
+        return client.actualizarUsuario(id, comercioId, usuarioRequest)
+                .map(ResponseEntity::ok);
+    }
+
+    @Operation(summary = "Desactivar usuario (borrado lógico)", security = @SecurityRequirement(name = "bearerAuth"))
+    @DeleteMapping("/usuarios/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'GERENTE_TIENDA')")
+    public Mono<ResponseEntity<Void>> eliminarUsuario(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Comercio-ID", required = false) Long comercioId) {
+        return client.eliminarUsuario(id, comercioId)
+                .map(v -> ResponseEntity.noContent().<Void>build())
+                .defaultIfEmpty(ResponseEntity.noContent().build());
+    }
+
+    @Operation(summary = "Listar catálogo de roles (para el selector de creación de usuarios)", security = @SecurityRequirement(name = "bearerAuth"))
+    @GetMapping("/roles")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'GERENTE_TIENDA')")
+    public Mono<ResponseEntity<List<RolResponseDTO>>> listarRoles() {
+        return client.listarRoles()
+                .map(ResponseEntity::ok);
     }
 
     // --- COMERCIOS ---
@@ -138,6 +178,44 @@ public class BffController {
                 .map(res -> ResponseEntity.status(HttpStatus.CREATED).body(res));
     }
 
+    // --- CATEGORÍAS ---
+    @Operation(summary = "Listar categorías del comercio", security = @SecurityRequirement(name = "bearerAuth"))
+    @GetMapping("/categorias")
+    @PreAuthorize("hasAnyRole('OPERADOR_INVENTARIO', 'GERENTE_TIENDA')")
+    public Mono<ResponseEntity<List<CategoriaResponseDTO>>> listarCategorias(@RequestHeader("X-Comercio-ID") Long comercioId) {
+        return client.listarCategorias(comercioId)
+                .map(ResponseEntity::ok);
+    }
+
+    @Operation(summary = "Crear categoría", security = @SecurityRequirement(name = "bearerAuth"))
+    @PostMapping("/categorias")
+    @PreAuthorize("hasAnyRole('OPERADOR_INVENTARIO', 'GERENTE_TIENDA')")
+    public Mono<ResponseEntity<CategoriaResponseDTO>> crearCategoria(
+            @RequestHeader("X-Comercio-ID") Long comercioId,
+            @Valid @RequestBody CategoriaRequestDTO categoriaRequest) {
+        return client.crearCategoria(comercioId, categoriaRequest)
+                .map(res -> ResponseEntity.status(HttpStatus.CREATED).body(res));
+    }
+
+    // --- PROVEEDORES ---
+    @Operation(summary = "Listar proveedores del comercio", security = @SecurityRequirement(name = "bearerAuth"))
+    @GetMapping("/proveedores")
+    @PreAuthorize("hasAnyRole('OPERADOR_INVENTARIO', 'GERENTE_TIENDA')")
+    public Mono<ResponseEntity<List<ProveedorResponseDTO>>> listarProveedores(@RequestHeader("X-Comercio-ID") Long comercioId) {
+        return client.listarProveedores(comercioId)
+                .map(ResponseEntity::ok);
+    }
+
+    @Operation(summary = "Crear proveedor", security = @SecurityRequirement(name = "bearerAuth"))
+    @PostMapping("/proveedores")
+    @PreAuthorize("hasAnyRole('OPERADOR_INVENTARIO', 'GERENTE_TIENDA')")
+    public Mono<ResponseEntity<ProveedorResponseDTO>> crearProveedor(
+            @RequestHeader("X-Comercio-ID") Long comercioId,
+            @Valid @RequestBody ProveedorRequestDTO proveedorRequest) {
+        return client.crearProveedor(comercioId, proveedorRequest)
+                .map(res -> ResponseEntity.status(HttpStatus.CREATED).body(res));
+    }
+
     // --- LOTES ---
     @Operation(summary = "Listar lotes", security = @SecurityRequirement(name = "bearerAuth"))
     @GetMapping("/inventario/lotes")
@@ -199,5 +277,13 @@ public class BffController {
     public Mono<ResponseEntity<Void>> atenderAlerta(@PathVariable Long id) {
         return client.atenderAlerta(id)
                 .then(Mono.just(ResponseEntity.noContent().build()));
+    }
+
+    @Operation(summary = "Auditoría de alertas del comercio (panel de control del GERENTE_TIENDA)", security = @SecurityRequirement(name = "bearerAuth"))
+    @GetMapping("/alertas/auditoria")
+    @PreAuthorize("hasRole('GERENTE_TIENDA')")
+    public Mono<ResponseEntity<List<AlertaAuditoriaResponseDTO>>> listarAuditoriaAlertas(@RequestHeader("X-Comercio-ID") Long comercioId) {
+        return client.listarAuditoriaAlertas(comercioId)
+                .map(ResponseEntity::ok);
     }
 }

@@ -1,6 +1,9 @@
 package com.osanzana.smartstock.bff.clients;
 
+import com.osanzana.smartstock.bff.dto.AlertaAuditoriaResponseDTO;
 import com.osanzana.smartstock.bff.dto.AlertaResponseDTO;
+import com.osanzana.smartstock.bff.dto.CategoriaRequestDTO;
+import com.osanzana.smartstock.bff.dto.CategoriaResponseDTO;
 import com.osanzana.smartstock.bff.dto.ComercioRequestDTO;
 import com.osanzana.smartstock.bff.dto.ComercioResponseDTO;
 import com.osanzana.smartstock.bff.dto.LoginRequestDTO;
@@ -9,10 +12,15 @@ import com.osanzana.smartstock.bff.dto.LoteRequestDTO;
 import com.osanzana.smartstock.bff.dto.LoteResponseDTO;
 import com.osanzana.smartstock.bff.dto.ProductoRequestDTO;
 import com.osanzana.smartstock.bff.dto.ProductoResponseDTO;
+import com.osanzana.smartstock.bff.dto.ProveedorRequestDTO;
+import com.osanzana.smartstock.bff.dto.ProveedorResponseDTO;
 import com.osanzana.smartstock.bff.dto.ReglaDepreciacionRequestDTO;
 import com.osanzana.smartstock.bff.dto.ReglaDepreciacionResponseDTO;
+import com.osanzana.smartstock.bff.dto.RolResponseDTO;
 import com.osanzana.smartstock.bff.dto.UsuarioCreateResponseDTO;
 import com.osanzana.smartstock.bff.dto.UsuarioRequestDTO;
+import com.osanzana.smartstock.bff.dto.UsuarioResponseDTO;
+import com.osanzana.smartstock.bff.dto.UsuarioUpdateRequestDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
@@ -48,6 +56,39 @@ public class SmartStockClient {
                 .bodyValue(usuarioRequest)
                 .retrieve()
                 .bodyToMono(UsuarioCreateResponseDTO.class);
+    }
+
+    public Mono<List<UsuarioResponseDTO>> listarUsuarios(Long comercioId) {
+        return authWebClient.get()
+                .uri("/api/v1/usuarios")
+                .header("X-Comercio-ID", comercioId != null ? String.valueOf(comercioId) : "")
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<UsuarioResponseDTO>>() {});
+    }
+
+    public Mono<UsuarioResponseDTO> actualizarUsuario(Long id, Long comercioId, UsuarioUpdateRequestDTO usuarioRequest) {
+        return authWebClient.put()
+                .uri("/api/v1/usuarios/{id}", id)
+                .header("X-Comercio-ID", comercioId != null ? String.valueOf(comercioId) : "")
+                .bodyValue(usuarioRequest)
+                .retrieve()
+                .bodyToMono(UsuarioResponseDTO.class);
+    }
+
+    public Mono<Void> eliminarUsuario(Long id, Long comercioId) {
+        return authWebClient.delete()
+                .uri("/api/v1/usuarios/{id}", id)
+                .header("X-Comercio-ID", comercioId != null ? String.valueOf(comercioId) : "")
+                .retrieve()
+                .bodyToMono(Void.class);
+    }
+
+    // Métodos para Roles
+    public Mono<List<RolResponseDTO>> listarRoles() {
+        return authWebClient.get()
+                .uri("/api/v1/roles")
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<RolResponseDTO>>() {});
     }
 
     // Métodos para Comercio
@@ -113,6 +154,40 @@ public class SmartStockClient {
                 .bodyToMono(ProductoResponseDTO.class);
     }
 
+    public Mono<List<CategoriaResponseDTO>> listarCategorias(Long comercioId) {
+        return inventoryWebClient.get()
+                .uri("/api/v1/categorias")
+                .header("X-Comercio-ID", String.valueOf(comercioId))
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<CategoriaResponseDTO>>() {});
+    }
+
+    public Mono<CategoriaResponseDTO> crearCategoria(Long comercioId, CategoriaRequestDTO categoriaRequest) {
+        return inventoryWebClient.post()
+                .uri("/api/v1/categorias")
+                .header("X-Comercio-ID", String.valueOf(comercioId))
+                .bodyValue(categoriaRequest)
+                .retrieve()
+                .bodyToMono(CategoriaResponseDTO.class);
+    }
+
+    public Mono<List<ProveedorResponseDTO>> listarProveedores(Long comercioId) {
+        return inventoryWebClient.get()
+                .uri("/api/v1/proveedores")
+                .header("X-Comercio-ID", String.valueOf(comercioId))
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<ProveedorResponseDTO>>() {});
+    }
+
+    public Mono<ProveedorResponseDTO> crearProveedor(Long comercioId, ProveedorRequestDTO proveedorRequest) {
+        return inventoryWebClient.post()
+                .uri("/api/v1/proveedores")
+                .header("X-Comercio-ID", String.valueOf(comercioId))
+                .bodyValue(proveedorRequest)
+                .retrieve()
+                .bodyToMono(ProveedorResponseDTO.class);
+    }
+
     public Mono<List<LoteResponseDTO>> listarLotes(Long comercioId) {
         return inventoryWebClient.get()
                 .uri("/api/v1/inventario/lotes")
@@ -162,6 +237,14 @@ public class SmartStockClient {
                 .header("X-Comercio-ID", String.valueOf(comercioId))
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<List<AlertaResponseDTO>>() {});
+    }
+
+    public Mono<List<AlertaAuditoriaResponseDTO>> listarAuditoriaAlertas(Long comercioId) {
+        return alertWebClient.get()
+                .uri("/api/v1/alertas/auditoria")
+                .header("X-Comercio-ID", String.valueOf(comercioId))
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<AlertaAuditoriaResponseDTO>>() {});
     }
 
     public Mono<Void> atenderAlerta(Long alertaId) {

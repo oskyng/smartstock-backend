@@ -1,6 +1,8 @@
 package com.osanzana.smartstock.bff.security;
 
 import com.osanzana.smartstock.bff.clients.SmartStockClient;
+import com.osanzana.smartstock.bff.dto.CategoriaResponseDTO;
+import com.osanzana.smartstock.bff.dto.ProveedorResponseDTO;
 import com.osanzana.smartstock.bff.dto.UsuarioCreateResponseDTO;
 import com.osanzana.smartstock.bff.dto.UsuarioResponseDTO;
 import com.osanzana.smartstock.bff.stream.AuditStreamService;
@@ -28,9 +30,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -165,6 +170,31 @@ public class BffSecurityIntegrationTest {
     }
 
     @Test
+    @DisplayName("GERENTE_TIENDA: puede acceder al panel de auditoría de alertas")
+    void testListarAuditoriaAlertas_GerenteTienda_Success() throws Exception {
+        Long commerceId = 1L;
+        String token = generateToken("gerente@test.com", "GERENTE_TIENDA", commerceId);
+        when(smartStockClient.listarAuditoriaAlertas(anyLong())).thenReturn(Mono.just(Collections.emptyList()));
+
+        mockMvc.perform(get("/api/v1/bff/alertas/auditoria")
+                .header("Authorization", "Bearer " + token)
+                .header("X-Comercio-ID", commerceId.toString()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("REPONEDOR_SALA: sin acceso al panel de auditoría del gerente")
+    void testListarAuditoriaAlertas_ReponedorSala_Forbidden() throws Exception {
+        Long commerceId = 1L;
+        String token = generateToken("reponedor@test.com", "REPONEDOR_SALA", commerceId);
+
+        mockMvc.perform(get("/api/v1/bff/alertas/auditoria")
+                .header("Authorization", "Bearer " + token)
+                .header("X-Comercio-ID", commerceId.toString()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @DisplayName("GERENTE_TIENDA: Sin acceso exclusivo de REPONEDOR_SALA a GET /alertas")
     void testListarAlertas_GerenteTienda_Forbidden() throws Exception {
         Long commerceId = 1L;
@@ -268,6 +298,130 @@ public class BffSecurityIntegrationTest {
         String token = generateToken("operador@tienda1.cl", "OPERADOR_INVENTARIO", commerceId);
 
         mockMvc.perform(patch("/api/v1/bff/alertas/1/atender")
+                .header("Authorization", "Bearer " + token)
+                .header("X-Comercio-ID", commerceId.toString()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("GERENTE_TIENDA: puede crear categorías (gestión de catálogo)")
+    void testCrearCategoria_GerenteTienda_Success() throws Exception {
+        Long commerceId = 1L;
+        String token = generateToken("gerente@tienda1.cl", "GERENTE_TIENDA", commerceId);
+        when(smartStockClient.crearCategoria(any(), any()))
+                .thenReturn(Mono.just(CategoriaResponseDTO.builder().id(1L).nombre("BEBIDAS").build()));
+
+        MvcResult result = mockMvc.perform(post("/api/v1/bff/categorias")
+                .header("Authorization", "Bearer " + token)
+                .header("X-Comercio-ID", commerceId.toString())
+                .contentType("application/json")
+                .content("{\"nombre\":\"BEBIDAS\"}"))
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(result))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    @DisplayName("GERENTE_TIENDA: puede crear proveedores (gestión de catálogo)")
+    void testCrearProveedor_GerenteTienda_Success() throws Exception {
+        Long commerceId = 1L;
+        String token = generateToken("gerente@tienda1.cl", "GERENTE_TIENDA", commerceId);
+        when(smartStockClient.crearProveedor(any(), any()))
+                .thenReturn(Mono.just(ProveedorResponseDTO.builder().id(1L).rutEmpresa("76.111.111-1")
+                        .razonSocial("Proveedor Uno").contactoEmail("contacto@proveedor.cl").build()));
+
+        MvcResult result = mockMvc.perform(post("/api/v1/bff/proveedores")
+                .header("Authorization", "Bearer " + token)
+                .header("X-Comercio-ID", commerceId.toString())
+                .contentType("application/json")
+                .content("{\"rutEmpresa\":\"76.111.111-1\",\"razonSocial\":\"Proveedor Uno\",\"contactoEmail\":\"contacto@proveedor.cl\"}"))
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(result))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    @DisplayName("REPONEDOR_SALA: no puede crear categorías (fuera del set OPERADOR/GERENTE)")
+    void testCrearCategoria_ReponedorSala_Forbidden() throws Exception {
+        Long commerceId = 1L;
+        String token = generateToken("reponedor@tienda1.cl", "REPONEDOR_SALA", commerceId);
+
+        mockMvc.perform(post("/api/v1/bff/categorias")
+                .header("Authorization", "Bearer " + token)
+                .header("X-Comercio-ID", commerceId.toString())
+                .contentType("application/json")
+                .content("{\"nombre\":\"BEBIDAS\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("REPONEDOR_SALA: no puede crear proveedores (fuera del set OPERADOR/GERENTE)")
+    void testCrearProveedor_ReponedorSala_Forbidden() throws Exception {
+        Long commerceId = 1L;
+        String token = generateToken("reponedor@tienda1.cl", "REPONEDOR_SALA", commerceId);
+
+        mockMvc.perform(post("/api/v1/bff/proveedores")
+                .header("Authorization", "Bearer " + token)
+                .header("X-Comercio-ID", commerceId.toString())
+                .contentType("application/json")
+                .content("{\"rutEmpresa\":\"76.111.111-1\",\"razonSocial\":\"Proveedor Uno\",\"contactoEmail\":\"contacto@proveedor.cl\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("GERENTE_TIENDA: puede listar usuarios de su comercio")
+    void testListarUsuarios_GerenteTienda_Success() throws Exception {
+        Long commerceId = 1L;
+        String token = generateToken("gerente@tienda1.cl", "GERENTE_TIENDA", commerceId);
+        when(smartStockClient.listarUsuarios(any())).thenReturn(Mono.just(Collections.emptyList()));
+
+        mockMvc.perform(get("/api/v1/bff/usuarios")
+                .header("Authorization", "Bearer " + token)
+                .header("X-Comercio-ID", commerceId.toString()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GERENTE_TIENDA: puede actualizar un usuario de su comercio")
+    void testActualizarUsuario_GerenteTienda_Success() throws Exception {
+        Long commerceId = 1L;
+        String token = generateToken("gerente@tienda1.cl", "GERENTE_TIENDA", commerceId);
+        when(smartStockClient.actualizarUsuario(any(), any(), any()))
+                .thenReturn(Mono.just(UsuarioResponseDTO.builder().id(5L).email("op@tienda1.cl").build()));
+
+        mockMvc.perform(put("/api/v1/bff/usuarios/5")
+                .header("Authorization", "Bearer " + token)
+                .header("X-Comercio-ID", commerceId.toString())
+                .contentType("application/json")
+                .content("{\"nombre\":\"Nuevo\",\"apellido\":\"Nombre\",\"email\":\"op@tienda1.cl\",\"idRol\":3}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GERENTE_TIENDA: puede desactivar un usuario de su comercio")
+    void testEliminarUsuario_GerenteTienda_Success() throws Exception {
+        Long commerceId = 1L;
+        String token = generateToken("gerente@tienda1.cl", "GERENTE_TIENDA", commerceId);
+        when(smartStockClient.eliminarUsuario(any(), any())).thenReturn(Mono.empty());
+
+        MvcResult result = mockMvc.perform(delete("/api/v1/bff/usuarios/5")
+                .header("Authorization", "Bearer " + token)
+                .header("X-Comercio-ID", commerceId.toString()))
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(result))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("REPONEDOR_SALA: no puede listar usuarios (fuera del set ADMIN/GERENTE)")
+    void testListarUsuarios_ReponedorSala_Forbidden() throws Exception {
+        Long commerceId = 1L;
+        String token = generateToken("reponedor@tienda1.cl", "REPONEDOR_SALA", commerceId);
+
+        mockMvc.perform(get("/api/v1/bff/usuarios")
                 .header("Authorization", "Bearer " + token)
                 .header("X-Comercio-ID", commerceId.toString()))
                 .andExpect(status().isForbidden());

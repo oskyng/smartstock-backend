@@ -1,5 +1,6 @@
 package com.osanzana.smartstock.alert.alertas.web;
 
+import com.osanzana.smartstock.alert.shared.dto.response.AlertaAuditoriaResponseDTO;
 import com.osanzana.smartstock.alert.shared.dto.response.AlertaResponseDTO;
 import com.osanzana.smartstock.alert.alertas.services.AlertaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,6 +28,13 @@ public class AlertaController {
         
         List<AlertaResponseDTO> alertas = alertaService.listarPendientesPorComercio(comercioId);
         return ResponseEntity.ok(alertas);
+    }
+
+    @Operation(summary = "Listar auditoría completa de alertas del comercio (todos los estados, para el panel de control del GERENTE_TIENDA)")
+    @GetMapping("/auditoria")
+    public ResponseEntity<List<AlertaAuditoriaResponseDTO>> listarAuditoria(
+            @RequestHeader("X-Comercio-ID") Long comercioId) {
+        return ResponseEntity.ok(alertaService.listarAuditoriaPorComercio(comercioId));
     }
 
     @Operation(summary = "Marcar alerta como atendida")

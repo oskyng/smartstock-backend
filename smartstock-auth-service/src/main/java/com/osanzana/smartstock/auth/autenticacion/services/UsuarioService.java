@@ -8,6 +8,7 @@ import com.osanzana.smartstock.auth.core.repositories.RolRepository;
 import com.osanzana.smartstock.auth.core.repositories.UsuarioRepository;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioCreateRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioRequestDTO;
+import com.osanzana.smartstock.auth.shared.dto.request.UsuarioUpdateRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.response.UsuarioResponseDTO;
 import com.osanzana.smartstock.auth.shared.exception.ConflictException;
 import com.osanzana.smartstock.auth.shared.exception.ResourceNotFoundException;
@@ -16,6 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -67,6 +71,70 @@ public class UsuarioService {
 
         Usuario guardado = usuarioRepository.save(usuario);
         return mapToResponse(guardado);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UsuarioResponseDTO> listar(Long idComercioContexto, String rolSolicitante) {
+        List<Usuario> usuarios = "ADMIN_SISTEMA".equals(rolSolicitante) && idComercioContexto == null
+                ? usuarioRepository.findAll()
+                : usuarioRepository.findByComercioId(idComercioContexto);
+        return usuarios.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public UsuarioResponseDTO actualizar(Long id, UsuarioUpdateRequestDTO request, Long idComercioContexto, String rolSolicitante) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        validarAlcance(usuario, idComercioContexto, rolSolicitante);
+
+        Rol rolDestino = rolRepository.findById(request.getIdRol())
+                .orElseThrow(() -> new ResourceNotFoundException("Rol no encontrado"));
+        validarJerarquia(rolSolicitante, rolDestino.getNombre());
+
+        if (!usuario.getEmail().equals(request.getEmail()) && usuarioRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new ConflictException("El email ya está registrado");
+        }
+
+        usuario.setNombre(request.getNombre());
+        usuario.setApellido(request.getApellido());
+        usuario.setEmail(request.getEmail());
+        usuario.setRol(rolDestino);
+
+        Usuario actualizado = usuarioRepository.save(usuario);
+        return mapToResponse(actualizado);
+    }
+
+    @Transactional
+    public void eliminar(Long id, Long idComercioContexto, String rolSolicitante) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        validarAlcance(usuario, idComercioContexto, rolSolicitante);
+
+        usuario.setActivo(0);
+        usuarioRepository.save(usuario);
+    }
+
+    /** Un GERENTE_TIENDA solo puede operar sobre usuarios OPERADOR_INVENTARIO/REPONEDOR_SALA de su propio comercio. */
+    private void validarAlcance(Usuario usuario, Long idComercioContexto, String rolSolicitante) {
+        if ("ADMIN_SISTEMA".equals(rolSolicitante)) {
+            return;
+        }
+
+        if ("GERENTE_TIENDA".equals(rolSolicitante)) {
+            boolean mismoComercio = usuario.getComercio() != null && usuario.getComercio().getId().equals(idComercioContexto);
+            boolean rolGestionable = "OPERADOR_INVENTARIO".equals(usuario.getRol().getNombre())
+                    || "REPONEDOR_SALA".equals(usuario.getRol().getNombre());
+            if (!mismoComercio || !rolGestionable) {
+                throw new UnauthorizedActionException("No tienes permisos para modificar este usuario.");
+            }
+            return;
+        }
+
+        throw new UnauthorizedActionException("No tienes permisos para modificar usuarios.");
     }
 
     private void validarUnicidad(String email, String rut) {

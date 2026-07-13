@@ -155,11 +155,13 @@ class BffControllerTest {
                 .alertaId(1L)
                 .productoNombre("Producto Test")
                 .build();
+        org.springframework.http.codec.ServerSentEvent<com.osanzana.smartstock.bff.dto.AlertaEscaladaEvent> sse =
+                org.springframework.http.codec.ServerSentEvent.builder(event).build();
 
-        when(auditStreamService.getAuditStream()).thenReturn(Flux.just(event));
+        when(auditStreamService.getAuditStream()).thenReturn(Flux.just(sse));
 
         StepVerifier.create(bffController.getAuditStream())
-                .expectNext(event)
+                .expectNext(sse)
                 .verifyComplete();
     }
 

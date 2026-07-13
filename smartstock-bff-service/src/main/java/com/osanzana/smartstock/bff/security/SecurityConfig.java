@@ -62,6 +62,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/v1/bff/comercios/**").hasRole("ADMIN_SISTEMA")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/bff/comercios/**").hasRole("ADMIN_SISTEMA")
                         .requestMatchers(HttpMethod.POST, "/api/v1/bff/usuarios").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/usuarios").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/bff/usuarios/**").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/bff/usuarios/**").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/roles").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
 
                         // C. [GERENTE_TIENDA] - Dashboard y reglas de depreciación
                         .requestMatchers(HttpMethod.GET, "/api/v1/bff/dashboard").hasRole("GERENTE_TIENDA")
@@ -72,11 +76,18 @@ public class SecurityConfig {
                         // D. [OPERADOR_INVENTARIO] - Productos e inventario de lotes
                         .requestMatchers(HttpMethod.GET, "/api/v1/bff/productos/**").hasRole("OPERADOR_INVENTARIO")
                         .requestMatchers(HttpMethod.POST, "/api/v1/bff/productos/**").hasRole("OPERADOR_INVENTARIO")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/categorias/**").hasAnyRole("OPERADOR_INVENTARIO", "GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bff/categorias/**").hasAnyRole("OPERADOR_INVENTARIO", "GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/proveedores/**").hasAnyRole("OPERADOR_INVENTARIO", "GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bff/proveedores/**").hasAnyRole("OPERADOR_INVENTARIO", "GERENTE_TIENDA")
                         .requestMatchers(HttpMethod.GET, "/api/v1/bff/inventario/lotes/**").hasRole("OPERADOR_INVENTARIO")
                         .requestMatchers(HttpMethod.POST, "/api/v1/bff/inventario/lotes/**").hasRole("OPERADOR_INVENTARIO")
 
                         // E. [REPONEDOR_SALA] - Alertas de sala
                         .requestMatchers(HttpMethod.GET, "/api/v1/bff/alertas").hasRole("REPONEDOR_SALA")
+
+                        // E2. [GERENTE_TIENDA] - Panel de control y auditoría de alertas
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/alertas/auditoria").hasRole("GERENTE_TIENDA")
 
                         // F. Resolución de alarmas (CA-07) - Operación compartida
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/bff/alertas/*/atender")

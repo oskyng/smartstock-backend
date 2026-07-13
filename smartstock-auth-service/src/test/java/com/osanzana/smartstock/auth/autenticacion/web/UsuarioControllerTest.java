@@ -8,6 +8,7 @@ import com.osanzana.smartstock.auth.core.entities.Usuario;
 import com.osanzana.smartstock.auth.core.repositories.UsuarioRepository;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioCreateRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioRequestDTO;
+import com.osanzana.smartstock.auth.shared.dto.request.UsuarioUpdateRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.response.UsuarioResponseDTO;
 import com.osanzana.smartstock.auth.shared.security.JwtAuthenticationFilter;
 import com.osanzana.smartstock.auth.shared.security.JwtUtils;
@@ -24,11 +25,12 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = UsuarioController.class)
@@ -136,5 +138,58 @@ class UsuarioControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    @WithMockUser(username = "gerente@test.cl", roles = "GERENTE_TIENDA")
+    void listarUsuarios_Success() throws Exception {
+        Rol rolGerente = Rol.builder().id(2L).nombre("GERENTE_TIENDA").build();
+        Comercio comercio = Comercio.builder().id(1L).build();
+        Usuario solicitante = Usuario.builder().id(1L).email("gerente@test.cl").rol(rolGerente).comercio(comercio).build();
+
+        when(usuarioRepository.findByEmail(anyString())).thenReturn(Optional.of(solicitante));
+        when(usuarioService.listar(eq(1L), eq("GERENTE_TIENDA")))
+                .thenReturn(List.of(UsuarioResponseDTO.builder().id(5L).email("op@test.cl").build()));
+
+        mockMvc.perform(get("/api/v1/usuarios")
+                .header("X-Comercio-ID", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].email").value("op@test.cl"));
+    }
+
+    @Test
+    @WithMockUser(username = "gerente@test.cl", roles = "GERENTE_TIENDA")
+    void actualizarUsuario_Success() throws Exception {
+        UsuarioUpdateRequestDTO request = UsuarioUpdateRequestDTO.builder()
+                .nombre("Nuevo").apellido("Nombre").email("op@test.cl").idRol(3L).build();
+
+        Rol rolGerente = Rol.builder().id(2L).nombre("GERENTE_TIENDA").build();
+        Comercio comercio = Comercio.builder().id(1L).build();
+        Usuario solicitante = Usuario.builder().id(1L).email("gerente@test.cl").rol(rolGerente).comercio(comercio).build();
+
+        when(usuarioRepository.findByEmail(anyString())).thenReturn(Optional.of(solicitante));
+        when(usuarioService.actualizar(eq(5L), any(UsuarioUpdateRequestDTO.class), eq(1L), eq("GERENTE_TIENDA")))
+                .thenReturn(UsuarioResponseDTO.builder().id(5L).nombre("Nuevo").build());
+
+        mockMvc.perform(put("/api/v1/usuarios/5")
+                .header("X-Comercio-ID", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Nuevo"));
+    }
+
+    @Test
+    @WithMockUser(username = "gerente@test.cl", roles = "GERENTE_TIENDA")
+    void eliminarUsuario_Success() throws Exception {
+        Rol rolGerente = Rol.builder().id(2L).nombre("GERENTE_TIENDA").build();
+        Comercio comercio = Comercio.builder().id(1L).build();
+        Usuario solicitante = Usuario.builder().id(1L).email("gerente@test.cl").rol(rolGerente).comercio(comercio).build();
+
+        when(usuarioRepository.findByEmail(anyString())).thenReturn(Optional.of(solicitante));
+
+        mockMvc.perform(delete("/api/v1/usuarios/5")
+                .header("X-Comercio-ID", "1"))
+                .andExpect(status().isNoContent());
     }
 }

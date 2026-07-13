@@ -108,6 +108,7 @@ services:
       - finance-service
       - alert-service
       - commerce-service
+      - kafka
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SMARTSTOCK_AUTH_SERVICE_URL=http://auth-service:8081
@@ -116,3 +117,4 @@ services:
       - SMARTSTOCK_ALERT_SERVICE_URL=http://alert-service:8084
       - SMARTSTOCK_COMMERCE_SERVICE_URL=http://commerce-service:8085
       - SMARTSTOCK_JWT_SECRET=smartstock_super_secret_key_2026_jwt_token_must_be_long_enough
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
