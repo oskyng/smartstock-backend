@@ -76,9 +76,10 @@ class ProductoControllerTest {
     @Test
     void obtenerProducto_Success() throws Exception {
         ProductoResponseDTO response = ProductoResponseDTO.builder().id(1L).nombre("Test").build();
-        when(productoService.obtenerPorId(1L)).thenReturn(response);
+        when(productoService.obtenerPorId(1L, 1L)).thenReturn(response);
 
-        mockMvc.perform(get("/api/v1/productos/1"))
+        mockMvc.perform(get("/api/v1/productos/1")
+                .header("X-Comercio-ID", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nombre").value("Test"));
     }

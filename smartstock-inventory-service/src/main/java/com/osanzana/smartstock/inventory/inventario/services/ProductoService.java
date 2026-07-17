@@ -36,8 +36,9 @@ public class ProductoService {
                 .collect(Collectors.toList());
     }
 
-    public ProductoResponseDTO obtenerPorId(Long id) {
+    public ProductoResponseDTO obtenerPorId(Long id, Long comercioId) {
         Producto producto = productoRepository.findById(id)
+                .filter(p -> p.getComercio().getId().equals(comercioId))
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
         return mapToResponseDTO(producto);
     }

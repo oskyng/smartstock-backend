@@ -12,7 +12,9 @@ import java.time.LocalDateTime;
 public class LoteResponseDTO {
     private Long id;
     private String nombreProducto;
+    private String nombreCategoria;
     private Integer cantidadActual;
+    private BigDecimal costoUnitario;
     private BigDecimal precioDinamico;
     private LocalDate fechaVencimiento;
     private String estadoLote;
