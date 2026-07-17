@@ -45,6 +45,12 @@ public class AlertaEventConsumer {
             LoteInventario lote = loteRepository.findById(evento.getLoteId())
                     .orElseThrow(() -> new BusinessException("Lote no encontrado para alerta: " + evento.getLoteId()));
 
+            if (!lote.getComercio().getId().equals(evento.getComercioId())) {
+                throw new BusinessException("El comercio del evento (" + evento.getComercioId()
+                        + ") no coincide con el comercio real del lote " + evento.getLoteId()
+                        + " (" + lote.getComercio().getId() + ")");
+            }
+
             // Buscar un Reponedor del mismo comercio
             Usuario reponedor = usuarioRepository.findByRolNombreAndActivoAndComercioId("REPONEDOR_SALA", 1, evento.getComercioId())
                     .stream().findFirst()
@@ -70,7 +76,7 @@ public class AlertaEventConsumer {
             log.info("Alerta creada con éxito desde evento Kafka para lote {}", lote.getId());
             
         } catch (Exception e) {
-            log.error("Error al procesar evento de alerta: {}", e.getMessage());
+            log.error("Error al procesar evento de alerta", e);
         }
     }
 }

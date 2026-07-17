@@ -6,6 +6,7 @@ import com.osanzana.smartstock.auth.core.entities.Usuario;
 import com.osanzana.smartstock.auth.core.repositories.ComercioRepository;
 import com.osanzana.smartstock.auth.core.repositories.RolRepository;
 import com.osanzana.smartstock.auth.core.repositories.UsuarioRepository;
+import com.osanzana.smartstock.auth.shared.dto.request.CambiarContrasenaRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioCreateRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioUpdateRequestDTO;
@@ -87,6 +88,16 @@ class UsuarioServiceTest {
         assertEquals(requestDTO.getEmail(), response.getEmail());
         assertEquals("ADMIN_SISTEMA", response.getRol());
         verify(usuarioRepository).save(any(Usuario.class));
+    }
+
+    @Test
+    void crearAdminSistema_Forbidden_WhenAdminAlreadyExists() {
+        when(usuarioRepository.existsByRolNombre("ADMIN_SISTEMA")).thenReturn(true);
+
+        assertThrows(UnauthorizedActionException.class, () ->
+            usuarioService.crearAdminSistema(requestDTO));
+
+        verify(usuarioRepository, never()).save(any(Usuario.class));
     }
 
     @Test
@@ -296,5 +307,67 @@ class UsuarioServiceTest {
         usuarioService.eliminar(8L, null, "ADMIN_SISTEMA");
 
         assertEquals(0, existente.getActivo());
+    }
+
+    @Test
+    void reactivar_GerenteTienda_Success() {
+        Comercio comercio = Comercio.builder().id(1L).build();
+        Rol rolReponedor = Rol.builder().id(4L).nombre("REPONEDOR_SALA").build();
+        Usuario existente = Usuario.builder().id(7L).rol(rolReponedor).comercio(comercio).activo(0).build();
+
+        when(usuarioRepository.findById(7L)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        UsuarioResponseDTO result = usuarioService.reactivar(7L, 1L, "GERENTE_TIENDA");
+
+        assertEquals(1, existente.getActivo());
+        assertEquals(1, result.getActivo());
+        verify(usuarioRepository).save(existente);
+    }
+
+    @Test
+    void reactivar_GerenteTienda_OtroComercio_Unauthorized() {
+        Comercio otroComercio = Comercio.builder().id(2L).build();
+        Rol rolReponedor = Rol.builder().id(4L).nombre("REPONEDOR_SALA").build();
+        Usuario existente = Usuario.builder().id(7L).rol(rolReponedor).comercio(otroComercio).activo(0).build();
+
+        when(usuarioRepository.findById(7L)).thenReturn(Optional.of(existente));
+
+        assertThrows(UnauthorizedActionException.class, () -> usuarioService.reactivar(7L, 1L, "GERENTE_TIENDA"));
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void cambiarContrasena_GerenteTienda_Success() {
+        Comercio comercio = Comercio.builder().id(1L).build();
+        Rol rolOperador = Rol.builder().id(3L).nombre("OPERADOR_INVENTARIO").build();
+        Usuario existente = Usuario.builder().id(5L).rol(rolOperador).comercio(comercio).passwordHash("hash-viejo").build();
+        CambiarContrasenaRequestDTO request = new CambiarContrasenaRequestDTO();
+        request.setNuevaContrasena("claveNueva123");
+
+        when(usuarioRepository.findById(5L)).thenReturn(Optional.of(existente));
+        when(passwordEncoder.encode("claveNueva123")).thenReturn("hash-nuevo");
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        usuarioService.cambiarContrasena(5L, request, 1L, "GERENTE_TIENDA");
+
+        assertEquals("hash-nuevo", existente.getPasswordHash());
+        verify(usuarioRepository).save(existente);
+    }
+
+    @Test
+    void cambiarContrasena_GerenteTienda_UsuarioNoGestionable_Unauthorized() {
+        Comercio comercio = Comercio.builder().id(1L).build();
+        Rol rolGerente = Rol.builder().id(2L).nombre("GERENTE_TIENDA").build();
+        Usuario existente = Usuario.builder().id(6L).rol(rolGerente).comercio(comercio).passwordHash("hash-viejo").build();
+        CambiarContrasenaRequestDTO request = new CambiarContrasenaRequestDTO();
+        request.setNuevaContrasena("claveNueva123");
+
+        when(usuarioRepository.findById(6L)).thenReturn(Optional.of(existente));
+
+        assertThrows(UnauthorizedActionException.class,
+                () -> usuarioService.cambiarContrasena(6L, request, 1L, "GERENTE_TIENDA"));
+        assertEquals("hash-viejo", existente.getPasswordHash());
+        verify(usuarioRepository, never()).save(any());
     }
 }

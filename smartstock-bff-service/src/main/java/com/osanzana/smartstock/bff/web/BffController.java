@@ -2,13 +2,19 @@ package com.osanzana.smartstock.bff.web;
 
 import com.osanzana.smartstock.bff.clients.SmartStockClient;
 import com.osanzana.smartstock.bff.dto.*;
+import com.osanzana.smartstock.bff.security.JwtUtils;
+import com.osanzana.smartstock.bff.service.InfraDiagService;
 import com.osanzana.smartstock.bff.stream.AuditStreamService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +23,10 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,17 +38,63 @@ public class BffController {
 
     private final SmartStockClient client;
     private final AuditStreamService auditStreamService;
+    private final InfraDiagService infraDiagService;
+
+    @Value("${smartstock.jwt.expiration:86400000}")
+    private long jwtExpirationMs;
+
+    /**
+     * false por defecto porque el stack local (docker-compose, ng serve) corre sobre HTTP plano;
+     * una cookie Secure jamás se enviaría de vuelta y rompería el login. Debe activarse vía
+     * SMARTSTOCK_COOKIE_SECURE=true en cualquier despliegue real servido con HTTPS.
+     */
+    @Value("${smartstock.cookie.secure:false}")
+    private boolean cookieSecure;
 
     @Operation(summary = "Stream de auditoría en tiempo real (SSE)", security = @SecurityRequirement(name = "bearerAuth"))
     @GetMapping(value = "/audit/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ServerSentEvent<AlertaEscaladaEvent>> getAuditStream() {
-        return auditStreamService.getAuditStream();
+    @PreAuthorize("hasRole('GERENTE_TIENDA')")
+    public Flux<ServerSentEvent<AlertaEscaladaEvent>> getAuditStream(
+            @RequestHeader("X-Comercio-ID") Long comercioId) {
+        return auditStreamService.getAuditStream(comercioId);
     }
 
+    /**
+     * El JWT viaja únicamente por cookie httpOnly (nunca en el body): así un XSS no puede leerlo
+     * desde JavaScript. SameSite=Strict basta como protección CSRF porque el navegador jamás habla
+     * directamente con los microservicios internos, solo con este bff, siempre same-origin
+     * (nginx/ng-serve hacen de proxy same-origin en todos los entornos de este proyecto).
+     */
     @Operation(summary = "Login centralizado")
     @PostMapping("/auth/login")
-    public Mono<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO loginRequest) {
-        return client.login(loginRequest);
+    public Mono<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO loginRequest, HttpServletResponse response) {
+        return client.login(loginRequest)
+                .map(loginResponse -> {
+                    ResponseCookie cookie = ResponseCookie.from(JwtUtils.AUTH_COOKIE_NAME,loginResponse.getToken())
+                            .httpOnly(true)
+                            .secure(cookieSecure)
+                            .sameSite("Strict")
+                            .path("/")
+                            .maxAge(Duration.ofMillis(jwtExpirationMs))
+                            .build();
+                    response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+                    loginResponse.setToken(null);
+                    return loginResponse;
+                });
+    }
+
+    @Operation(summary = "Cerrar sesión: invalida la cookie de autenticación")
+    @PostMapping("/auth/logout")
+    public ResponseEntity<Void> logout(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from(JwtUtils.AUTH_COOKIE_NAME,"")
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(0)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        return ResponseEntity.noContent().build();
     }
 
     // --- USUARIOS ---
@@ -71,7 +127,7 @@ public class BffController {
                 .map(ResponseEntity::ok);
     }
 
-    @Operation(summary = "Desactivar usuario (borrado lógico)", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Suspender usuario (borrado lógico, reversible con /reactivar)", security = @SecurityRequirement(name = "bearerAuth"))
     @DeleteMapping("/usuarios/{id}")
     @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'GERENTE_TIENDA')")
     public Mono<ResponseEntity<Void>> eliminarUsuario(
@@ -80,6 +136,27 @@ public class BffController {
         return client.eliminarUsuario(id, comercioId)
                 .map(v -> ResponseEntity.noContent().<Void>build())
                 .defaultIfEmpty(ResponseEntity.noContent().build());
+    }
+
+    @Operation(summary = "Reactivar usuario suspendido", security = @SecurityRequirement(name = "bearerAuth"))
+    @PatchMapping("/usuarios/{id}/reactivar")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'GERENTE_TIENDA')")
+    public Mono<ResponseEntity<UsuarioResponseDTO>> reactivarUsuario(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Comercio-ID", required = false) Long comercioId) {
+        return client.reactivarUsuario(id, comercioId)
+                .map(ResponseEntity::ok);
+    }
+
+    @Operation(summary = "Restablecer la contraseña de un usuario (acción administrativa)", security = @SecurityRequirement(name = "bearerAuth"))
+    @PatchMapping("/usuarios/{id}/password")
+    @PreAuthorize("hasAnyRole('ADMIN_SISTEMA', 'GERENTE_TIENDA')")
+    public Mono<ResponseEntity<Void>> cambiarContrasenaUsuario(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Comercio-ID", required = false) Long comercioId,
+            @Valid @RequestBody CambiarContrasenaRequestDTO request) {
+        return client.cambiarContrasenaUsuario(id, comercioId, request)
+                .then(Mono.just(ResponseEntity.noContent().<Void>build()));
     }
 
     @Operation(summary = "Listar catálogo de roles (para el selector de creación de usuarios)", security = @SecurityRequirement(name = "bearerAuth"))
@@ -140,7 +217,7 @@ public class BffController {
 
         return Mono.zip(
                 client.listarProductos(comercioId).onErrorReturn(Collections.emptyList()),
-                client.listarLotes(comercioId).onErrorReturn(Collections.emptyList()),
+                client.listarLotesInterno(comercioId).onErrorReturn(Collections.emptyList()),
                 client.listarAlertas(comercioId).onErrorReturn(Collections.emptyList()),
                 client.listarReglas(comercioId).onErrorReturn(Collections.emptyList())
         ).map(tuple -> DashboardResponseDTO.builder()
@@ -148,7 +225,31 @@ public class BffController {
                 .lotesRecientes(tuple.getT2())
                 .alertasPendientes(tuple.getT3())
                 .reglasActivas(tuple.getT4())
+                .capitalEnRiesgo(calcularCapitalEnRiesgo(tuple.getT2(), tuple.getT4()))
                 .build());
+    }
+
+    private BigDecimal calcularCapitalEnRiesgo(List<LoteResponseDTO> lotes, List<ReglaDepreciacionResponseDTO> reglas) {
+        LocalDate hoy = LocalDate.now();
+        BigDecimal total = BigDecimal.ZERO;
+
+        for (LoteResponseDTO lote : lotes) {
+            if (lote.getCostoUnitario() == null || lote.getCantidadActual() == null || lote.getFechaVencimiento() == null) {
+                continue;
+            }
+            long diasParaVencer = ChronoUnit.DAYS.between(hoy, lote.getFechaVencimiento());
+
+            boolean enRiesgo = reglas.stream()
+                    .filter(r -> r.getActiva() != null && r.getActiva() == 1)
+                    .filter(r -> r.getNombreCategoria() != null && r.getNombreCategoria().equals(lote.getNombreCategoria()))
+                    .anyMatch(r -> r.getDiasCriticosMin() != null && diasParaVencer <= r.getDiasCriticosMin());
+
+            if (enRiesgo) {
+                total = total.add(lote.getCostoUnitario().multiply(BigDecimal.valueOf(lote.getCantidadActual())));
+            }
+        }
+
+        return total;
     }
 
     // --- PRODUCTOS ---
@@ -285,5 +386,13 @@ public class BffController {
     public Mono<ResponseEntity<List<AlertaAuditoriaResponseDTO>>> listarAuditoriaAlertas(@RequestHeader("X-Comercio-ID") Long comercioId) {
         return client.listarAuditoriaAlertas(comercioId)
                 .map(ResponseEntity::ok);
+    }
+
+    // --- INFRAESTRUCTURA ---
+    @Operation(summary = "Estado de infraestructura: salud de microservicios y metadata real de Kafka", security = @SecurityRequirement(name = "bearerAuth"))
+    @GetMapping("/infra/status")
+    @PreAuthorize("hasRole('ADMIN_SISTEMA')")
+    public Mono<InfraStatusDTO> getInfraStatus() {
+        return infraDiagService.obtenerEstadoInfraestructura();
     }
 }

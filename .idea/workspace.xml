@@ -4,53 +4,117 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="90f55ae5-4217-42f5-ac5a-00c6f76fbdf7" name="Changes" comment="feat: Se implementa CORS para la comunicacion con el front">
+    <list default="true" id="fc3b2bc9-010e-45ec-aae4-303eae5ebce9" name="Changes" comment="feat: Configurar HikariCP en todos los microservicios para manejo de conexión a la base de datos">
+      <change afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/autenticacion/services/EmailService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/autenticacion/services/RecuperacionService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/autenticacion/web/RecuperacionController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/core/entities/CodigoRecuperacion.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/core/repositories/CodigoRecuperacionRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/shared/dto/request/ForgotPasswordRequestDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/shared/dto/request/ResetPasswordRequestDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/shared/dto/request/VerifyCodeRequestDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/shared/dto/response/MensajeResponseDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/shared/dto/response/VerifyCodeResponseDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/smartstock-auth-service/src/test/java/com/osanzana/smartstock/auth/autenticacion/services/RecuperacionServiceTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/smartstock-auth-service/src/test/java/com/osanzana/smartstock/auth/autenticacion/web/RecuperacionControllerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-alert-service/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-alert-service/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/alertas/repositories/AlertaAccionRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/alertas/repositories/AlertaAccionRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/alertas/services/AlertaService.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/alertas/services/AlertaService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/alertas/services/AlertaServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/alertas/services/AlertaServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/alertas/stream/AlertaEventConsumer.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/alertas/stream/AlertaEventConsumer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/alertas/web/AlertaController.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/alertas/web/AlertaController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/shared/dto/response/AlertaAuditoriaResponseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/shared/dto/response/AlertaAuditoriaResponseDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/shared/scheduling/AlertaScheduler.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/shared/scheduling/AlertaScheduler.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/shared/security/HttpSecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/shared/security/HttpSecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/shared/security/JwtUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-alert-service/src/main/java/com/osanzana/smartstock/alert/shared/security/JwtUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-alert-service/src/main/resources/application-prod.properties" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-alert-service/src/main/resources/application-prod.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-alert-service/src/test/java/com/osanzana/smartstock/alert/alertas/services/AlertaServiceImplTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-alert-service/src/test/java/com/osanzana/smartstock/alert/alertas/services/AlertaServiceImplTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-alert-service/src/test/java/com/osanzana/smartstock/alert/alertas/stream/AlertaEventConsumerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-alert-service/src/test/java/com/osanzana/smartstock/alert/alertas/stream/AlertaEventConsumerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-alert-service/src/test/java/com/osanzana/smartstock/alert/alertas/web/AlertaControllerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-alert-service/src/test/java/com/osanzana/smartstock/alert/alertas/web/AlertaControllerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/AuthApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/AuthApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/autenticacion/services/AuthService.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/autenticacion/services/AuthService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/autenticacion/services/UsuarioService.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/autenticacion/services/UsuarioService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/autenticacion/web/UsuarioController.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/autenticacion/web/UsuarioController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/core/repositories/UsuarioRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/core/repositories/UsuarioRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/shared/exception/GlobalExceptionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/shared/exception/GlobalExceptionHandler.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/shared/security/HttpSecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/shared/security/HttpSecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/config/SecurityConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/shared/security/JwtAuthenticationFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/shared/security/JwtAuthenticationFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/shared/security/JwtUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/java/com/osanzana/smartstock/auth/shared/security/JwtUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/src/main/resources/application-prod.properties" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/resources/application-prod.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/src/test/java/com/osanzana/smartstock/auth/autenticacion/services/AuthServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/src/test/java/com/osanzana/smartstock/auth/autenticacion/services/AuthServiceTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/src/test/java/com/osanzana/smartstock/auth/autenticacion/services/UsuarioServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/src/test/java/com/osanzana/smartstock/auth/autenticacion/services/UsuarioServiceTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/src/test/java/com/osanzana/smartstock/auth/autenticacion/web/UsuarioControllerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/src/test/java/com/osanzana/smartstock/auth/autenticacion/web/UsuarioControllerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-auth-service/src/test/java/com/osanzana/smartstock/auth/shared/security/JwtUtilsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-auth-service/src/test/java/com/osanzana/smartstock/auth/shared/security/JwtUtilsTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-bff-service/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-bff-service/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/clients/SmartStockClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/clients/SmartStockClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/config/WebClientConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/config/WebClientConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/dto/AlertaAuditoriaResponseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/dto/AlertaAuditoriaResponseDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/dto/DashboardResponseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/dto/DashboardResponseDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/dto/LoginResponseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/dto/LoginResponseDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/dto/LoteResponseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/dto/LoteResponseDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/security/JwtAuthenticationFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/security/JwtAuthenticationFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/security/JwtUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/security/JwtUtils.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/security/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/security/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/stream/AuditStreamService.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/stream/AuditStreamService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/web/BffController.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-bff-service/src/main/java/com/osanzana/smartstock/bff/web/BffController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-bff-service/src/test/java/com/osanzana/smartstock/bff/web/BffControllerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-bff-service/src/test/java/com/osanzana/smartstock/bff/web/BffControllerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-commerce-service/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-commerce-service/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-commerce-service/src/main/java/com/osanzana/smartstock/commerce/shared/security/JwtUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-commerce-service/src/main/java/com/osanzana/smartstock/commerce/shared/security/JwtUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-commerce-service/src/main/resources/application-prod.properties" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-commerce-service/src/main/resources/application-prod.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-finance-service/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-finance-service/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/FinanceApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/FinanceApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/core/repositories/LoteRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/core/repositories/LoteRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/finanzas/services/ReglaDepreciacionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/finanzas/services/ReglaDepreciacionService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/finanzas/strategies/DescuentoProximidadStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/finanzas/strategies/DescuentoProximidadStrategy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/finanzas/stream/LoteEventConsumer.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/finanzas/stream/LoteEventConsumer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/finanzas/web/ReglaDepreciacionController.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/finanzas/web/ReglaDepreciacionController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/shared/security/HttpSecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/shared/security/HttpSecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/shared/security/JwtUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-finance-service/src/main/java/com/osanzana/smartstock/finance/shared/security/JwtUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-finance-service/src/main/resources/application-prod.properties" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-finance-service/src/main/resources/application-prod.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-finance-service/src/test/java/com/osanzana/smartstock/finance/finanzas/services/ReglaDepreciacionServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-finance-service/src/test/java/com/osanzana/smartstock/finance/finanzas/services/ReglaDepreciacionServiceTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-finance-service/src/test/java/com/osanzana/smartstock/finance/finanzas/strategies/DescuentoProximidadStrategyTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-finance-service/src/test/java/com/osanzana/smartstock/finance/finanzas/strategies/DescuentoProximidadStrategyTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-finance-service/src/test/java/com/osanzana/smartstock/finance/shared/security/JwtAuthenticationFilterTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-finance-service/src/test/java/com/osanzana/smartstock/finance/shared/security/JwtAuthenticationFilterTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-inventory-service/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-inventory-service/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/core/repositories/LoteRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/core/repositories/LoteRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/inventario/services/LoteServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/inventario/services/LoteServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/inventario/services/ProductoService.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/inventario/services/ProductoService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/inventario/web/CategoriaController.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/inventario/web/CategoriaController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/inventario/web/LoteController.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/inventario/web/LoteController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/inventario/web/ProductoController.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/inventario/web/ProductoController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/inventario/web/ProveedorController.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/inventario/web/ProveedorController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/shared/dto/response/LoteResponseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/shared/dto/response/LoteResponseDTO.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/shared/security/HttpSecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/shared/security/HttpSecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/shared/security/JwtUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-inventory-service/src/main/java/com/osanzana/smartstock/inventory/shared/security/JwtUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-inventory-service/src/main/resources/application-prod.properties" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-inventory-service/src/main/resources/application-prod.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-inventory-service/src/test/java/com/osanzana/smartstock/inventory/inventario/services/LoteServiceImplTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-inventory-service/src/test/java/com/osanzana/smartstock/inventory/inventario/services/LoteServiceImplTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-inventory-service/src/test/java/com/osanzana/smartstock/inventory/inventario/services/ProductoServiceImplTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-inventory-service/src/test/java/com/osanzana/smartstock/inventory/inventario/services/ProductoServiceImplTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/smartstock-inventory-service/src/test/java/com/osanzana/smartstock/inventory/inventario/web/ProductoControllerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/smartstock-inventory-service/src/test/java/com/osanzana/smartstock/inventory/inventario/web/ProductoControllerTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="CopilotChats">
-    <option name="panelChat">
-      <chat>
-        <option name="activeSessionId" value="ed5c964a-f8eb-4c53-9ecc-17162eb23303" />
-        <option name="sessions">
-          <session>
-            <option name="chatType" value="PANEL" />
-            <option name="id" value="ed5c964a-f8eb-4c53-9ecc-17162eb23303" />
-            <option name="modeId" value="Agent" />
-            <option name="modelType" value="builtin_family" />
-            <option name="modelValue" value="auto" />
-            <option name="targetType" value="LOCAL" />
-          </session>
-        </option>
-        <option name="type" value="PANEL" />
-      </chat>
-    </option>
-  </component>
   <component name="CopilotPersistence">
     <persistenceIdMap>
-      <entry key="_E:/Duoc/SmartStock/smartstock-backend" value="3FO5SS31ZmGJnRl501XrniZO9Vg" />
+      <entry key="_E:/Duoc/SmartStock/smartstock-backend" value="3GMekcyqDA5vrCsOx1FSd6UgnrE" />
+      <entry key="_E:/Duoc/SmartStock/smartstock-backend/smartstock-alert-service" value="3GN8JHcldi2Aqr3qsfHJMJcvQtu" />
+      <entry key="_E:/Duoc/SmartStock/smartstock-backend/smartstock-commerce-service" value="3GcFIR52tvLvNhBMNMHTka5ylSh" />
     </persistenceIdMap>
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="263" />
+    <option name="cachedIndexableFilesCount" value="459" />
     <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_BRANCH_BY_REPOSITORY">
-      <map>
-        <entry key="$PROJECT_DIR$" value="main" />
-      </map>
-    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -69,138 +133,164 @@
   <component name="KubernetesApiProvider">{
   &quot;isMigrated&quot;: true
 }</component>
-  <component name="MavenImportPreferences">
-    <option name="generalSettings">
-      <MavenGeneralSettings>
-        <option name="mavenHomeTypeForPersistence" value="WRAPPER" />
-      </MavenGeneralSettings>
-    </option>
-  </component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.5596886978719593" />
-      <entry key="MS500" value="3.379776113741944" />
-      <entry key="S2" value="5.849904234965531" />
-      <entry key="S5" value="6.984090666376658" />
-      <entry key="S10" value="7.460992265976703" />
-      <entry key="S30" value="7.812875362416557" />
-      <entry key="S60" value="7.905505196789692" />
-      <entry key="M2" value="7.973409877433306" />
-      <entry key="M5" value="8.928032659789372" />
-      <entry key="M10" value="11.545929961393687" />
-      <entry key="M15" value="14.06741264546303" />
-      <entry key="M30" value="20.47488251857835" />
-      <entry key="H1" value="28.016575696368264" />
-      <entry key="H2" value="34.19289269835729" />
-      <entry key="H4" value="38.380596469949175" />
-      <entry key="D1" value="49.721168732465" />
-      <entry key="W1" value="57.25645138315175" />
+      <entry key="MS100" value="1.000057742779887" />
+      <entry key="MS500" value="1.1493995225608789" />
+      <entry key="S2" value="2.3517529334004266" />
+      <entry key="S5" value="3.8362331793295295" />
+      <entry key="S10" value="4.740215116641313" />
+      <entry key="S30" value="5.657445394345668" />
+      <entry key="S60" value="7.272836345106108" />
+      <entry key="M2" value="13.121597367993248" />
+      <entry key="M5" value="27.888844532216414" />
+      <entry key="M10" value="38.583251147159146" />
+      <entry key="M15" value="43.38872603818718" />
+      <entry key="M30" value="50.11781061362555" />
+      <entry key="H1" value="57.52401368801712" />
+      <entry key="H2" value="65.77571409877295" />
+      <entry key="H4" value="72.7113217948777" />
+      <entry key="D1" value="80.98017647016756" />
+      <entry key="W1" value="82.70279827577012" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
       <entry key="MS500" value="0.0" />
       <entry key="S2" value="0.0" />
       <entry key="S5" value="0.0" />
-      <entry key="S10" value="0.0" />
-      <entry key="S30" value="0.0" />
-      <entry key="S60" value="0.0" />
-      <entry key="M2" value="9.572276722242763E-231" />
-      <entry key="M5" value="2.2563139602305715E-92" />
-      <entry key="M10" value="3.0039218123633122E-46" />
-      <entry key="M15" value="7.119834305011707E-31" />
-      <entry key="M30" value="1.6875643000863936E-15" />
-      <entry key="H1" value="8.21597304152425E-8" />
-      <entry key="H2" value="5.732699924746134E-4" />
-      <entry key="H4" value="0.047886106612770124" />
-      <entry key="D1" value="1.9131612272989398" />
-      <entry key="W1" value="3.599992908648989" />
+      <entry key="S10" value="5.967753690016628E-295" />
+      <entry key="S30" value="8.419189730452079E-99" />
+      <entry key="S60" value="9.175614406995657E-50" />
+      <entry key="M2" value="3.029737722755197E-25" />
+      <entry key="M5" value="1.6570088160852583E-10" />
+      <entry key="M10" value="1.7926360761216376E-5" />
+      <entry key="M15" value="9.842859048382162E-4" />
+      <entry key="M30" value="0.05977689526243897" />
+      <entry key="H1" value="0.4835604602273735" />
+      <entry key="H2" value="1.3871295142094258" />
+      <entry key="H4" value="2.3540403283940274" />
+      <entry key="D1" value="3.661410133509407" />
+      <entry key="W1" value="3.9497691842614158" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="1.5103852960149504" />
-      <entry key="MS500" value="3.3246217119232444" />
-      <entry key="S2" value="5.821536314292243" />
-      <entry key="S5" value="6.970540964602479" />
-      <entry key="S10" value="7.453779454287747" />
-      <entry key="S30" value="7.810365886211165" />
-      <entry key="S60" value="7.904236773943845" />
-      <entry key="M2" value="7.972771263404775" />
-      <entry key="M5" value="8.927759610499795" />
-      <entry key="M10" value="11.545767530599537" />
-      <entry key="M15" value="14.067283115350293" />
-      <entry key="M30" value="20.474782975127983" />
-      <entry key="H1" value="28.016502488162423" />
-      <entry key="H2" value="34.19341910137729" />
-      <entry key="H4" value="38.428452776016485" />
-      <entry key="D1" value="51.63430466383708" />
-      <entry key="W1" value="60.856438105858224" />
+      <entry key="MS100" value="0.06988106377778007" />
+      <entry key="MS500" value="0.7293358488902945" />
+      <entry key="S2" value="2.1022653060783787" />
+      <entry key="S5" value="3.6432464353194733" />
+      <entry key="S10" value="4.613360522656665" />
+      <entry key="S30" value="5.606037483233335" />
+      <entry key="S60" value="7.245652251483805" />
+      <entry key="M2" value="13.10722252929791" />
+      <entry key="M5" value="27.882493421477985" />
+      <entry key="M10" value="38.579881199699514" />
+      <entry key="M15" value="43.38737801924861" />
+      <entry key="M30" value="50.17623451746751" />
+      <entry key="H1" value="58.00645272369512" />
+      <entry key="H2" value="67.16184288410076" />
+      <entry key="H4" value="75.06463125629097" />
+      <entry key="D1" value="84.64141332057243" />
+      <entry key="W1" value="86.65254108934856" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
-  &quot;associatedIndex&quot;: 0,
+  &quot;associatedIndex&quot;: 2,
   &quot;fromUser&quot;: false
 }</component>
-  <component name="ProjectId" id="3FO5SS31ZmGJnRl501XrniZO9Vg" />
+  <component name="ProjectId" id="3GMekcyqDA5vrCsOx1FSd6UgnrE" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectSessionTemplates">
+    <option name="inlineTemplate">
+      <template>
+        <option name="modeId" value="InlineAgent" />
+        <option name="model">
+          <model>
+            <option name="modelType" value="builtin_id" />
+            <option name="modelValue" value="auto" />
+          </model>
+        </option>
+        <option name="targetType" value="LOCAL" />
+      </template>
+    </option>
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "JUnit.AlertSecurityIntegrationTest.executor": "Run",
+    "JUnit.BffControllerTest.executor": "Run",
+    "JUnit.BffSecurityIntegrationTest.executor": "Run",
+    "JUnit.BffSecurityIntegrationTest.testOperadorInventario_FechaPasada_BadRequest.executor": "Run",
+    "JUnit.BffWireMockIntegrationTest.executor": "Run",
+    "JUnit.BffWireMockIntegrationTest.testInventory_CrearLote_Success.executor": "Run",
+    "JUnit.ComercioControllerTest.executor": "Run",
+    "JUnit.ComercioServiceTest.executor": "Run",
     "JUnit.JwtUtilsTest.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RequestMappingsPanelOrder0": "0",
-    "RequestMappingsPanelOrder1": "1",
-    "RequestMappingsPanelWidth0": "75",
-    "RequestMappingsPanelWidth1": "75",
+    "JUnit.JwtUtilsTest.validateUserProvidedToken.executor": "Run",
+    "JUnit.LoteControllerTest.executor": "Run",
+    "JUnit.LoteEventProducerTest.executor": "Run",
+    "JUnit.LoteServiceImplTest.executor": "Run",
+    "JUnit.ProductoControllerTest.executor": "Run",
+    "JUnit.ProductoServiceTest.executor": "Run",
+    "JUnit.ReglaDepreciacionControllerTest.crearRegla_Success.executor": "Run",
+    "JUnit.UsuarioControllerTest.executor": "Run",
+    "JUnit.UsuarioServiceTest.executor": "Run",
+    "Maven.smartstock-alert-service [clean,install].executor": "Run",
+    "Maven.smartstock-auth-service [clean,install].executor": "Run",
+    "Maven.smartstock-bff-service [clean,install].executor": "Run",
+    "Maven.smartstock-commerce-service [clean...].executor": "Run",
+    "Maven.smartstock-finance-service [clean...].executor": "Run",
+    "Maven.smartstock-inventory-service [clean...].executor": "Run",
     "RunOnceActivity.MCP Project settings loaded": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "SONARLINT_PRECOMMIT_ANALYSIS": "true",
-    "Spring Boot.SmartstockBackendApplication.executor": "Run",
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
     "copilot.chat.legacySessionMetadata.migrated": "true",
     "git-widget-placeholder": "desarrollo",
     "ignore.virus.scanning.warn.message": "true",
     "junie.onboarding.icon.badge.shown": "true",
+    "junie.plugin.stays.banner.dismissed": "true",
     "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "E:/Duoc/SmartStock/smartstock-backend/smartstock-inventory-service/src/main/resources",
     "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.2",
     "run.configurations.included.in.services": "true",
-    "settings.editor.selected.configurable": "ml.llm.AcpAgentsConfigurable",
+    "settings.editor.selected.configurable": "ml.llm.LLMConfigurable",
     "to.speed.mode.migration.done": "true",
     "vue.rearranger.settings.migration": "true"
-  },
-  "keyToStringList": {
-    "DatabaseDriversLRU": [
-      "oracle"
-    ]
   }
 }]]></component>
-  <component name="RunDashboard">
-    <option name="configurationTypes">
-      <set>
-        <option value="KtorApplicationConfigurationType" />
-        <option value="MicronautRunConfigurationType" />
-        <option value="QuarkusRunConfigurationType" />
-        <option value="SpringBootApplicationConfigurationType" />
-      </set>
-    </option>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\Duoc\SmartStock\smartstock-backend\smartstock-inventory-service\src\main\resources" />
+      <recent name="E:\Duoc\SmartStock\smartstock-backend\smartstock-finance-service\src\main\resources" />
+      <recent name="E:\Duoc\SmartStock\smartstock-backend\smartstock-commerce-service\src\main\resources" />
+      <recent name="E:\Duoc\SmartStock\smartstock-backend\smartstock-bff-service\src\main\resources" />
+      <recent name="E:\Duoc\SmartStock\smartstock-backend\smartstock-auth-service\src\main\resources" />
+    </key>
   </component>
-  <component name="RunManager" selected="Spring Boot.AlertApplication">
+  <component name="RunManager" selected="JUnit.BffWireMockIntegrationTest">
     <configuration default="true" type="AZURE_FUNCTION_SUPPORT" factoryName="Run Functions">
       <option name="appName" />
       <option name="appServicePlanName" />
       <option name="appServicePlanResourceGroup" />
-      <option name="appSettingsKey" value="be97c831-1d9c-45b1-988a-7c3bcb926aee" />
+      <option name="appSettingsKey" value="3f583dcf-82e5-4664-bfa0-005f4c7df9a8" />
       <option name="artifact" />
       <option name="debugOptions" />
       <option name="deployment" />
@@ -226,6 +316,36 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="BffSecurityIntegrationTest" type="JUnit" factoryName="JUnit" singleton="false" temporary="true" nameIsGenerated="true">
+      <module name="smartstock-bff-service" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.osanzana.smartstock.bff.security.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.osanzana.smartstock.bff.security" />
+      <option name="MAIN_CLASS_NAME" value="com.osanzana.smartstock.bff.security.BffSecurityIntegrationTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="BffWireMockIntegrationTest" type="JUnit" factoryName="JUnit" singleton="false" temporary="true" nameIsGenerated="true">
+      <module name="smartstock-bff-service" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.osanzana.smartstock.bff.integration.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.osanzana.smartstock.bff.integration" />
+      <option name="MAIN_CLASS_NAME" value="com.osanzana.smartstock.bff.integration.BffWireMockIntegrationTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="AlertApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <module name="smartstock-alert-service" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="com.osanzana.smartstock.alert.AlertApplication" />
@@ -247,6 +367,13 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="CommerceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="smartstock-commerce-service" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.osanzana.smartstock.commerce.CommerceApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="FinanceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <module name="smartstock-finance-service" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="com.osanzana.smartstock.finance.FinanceApplication" />
@@ -261,64 +388,97 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="SmartstockBackendApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
-      <module name="smartstock-backend" />
-      <option name="SPRING_BOOT_MAIN_CLASS" value="com.osanzana.smartstockbackend.SmartstockBackendApplication" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="JUnit.BffWireMockIntegrationTest" />
+        <item itemvalue="JUnit.BffSecurityIntegrationTest" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-30f59d01ecdd-37e91769500f-intellij.indexing.shared.core-IU-261.25134.95" />
-        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-IU-261.25134.95" />
+        <option value="bundled-jdk-30f59d01ecdd-63390994e64e-intellij.indexing.shared.core-IU-262.8665.258" />
+        <option value="bundled-js-predefined-d6986cc7102b-4abd2a77f808-JavaScript-IU-262.8665.258" />
       </set>
     </attachedChunks>
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="90f55ae5-4217-42f5-ac5a-00c6f76fbdf7" name="Changes" comment="" />
-      <created>1781933279175</created>
+      <changelist id="fc3b2bc9-010e-45ec-aae4-303eae5ebce9" name="Changes" comment="refactor: Eliminar `UsuarioServiceImpl` y sus pruebas, deshabilitar CSRF en múltiples servicios, y actualizar configuraciones para simplificar implementación" />
+      <created>1783786013394</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1781933279175</updated>
-      <workItem from="1781933280317" duration="792000" />
-      <workItem from="1782009112992" duration="173000" />
-      <workItem from="1782009365572" duration="9121000" />
-      <workItem from="1782525900266" duration="109000" />
-      <workItem from="1782526055205" duration="12431000" />
+      <updated>1783786013394</updated>
+      <workItem from="1783786016436" duration="321000" />
+      <workItem from="1783786512424" duration="10525000" />
+      <workItem from="1783800598922" duration="24425000" />
+      <workItem from="1783869902124" duration="7866000" />
+      <workItem from="1783878614296" duration="1270000" />
+      <workItem from="1783985366106" duration="2356000" />
+      <workItem from="1784220938503" duration="1633000" />
+      <workItem from="1784233315305" duration="7612000" />
+      <workItem from="1784262879441" duration="1746000" />
     </task>
-    <task id="LOCAL-00001" summary="feat: Se eliminan los archivos del target y se agregan al gitignore">
+    <task id="LOCAL-00001" summary="feat: Implementar microservicio `smartstock-commerce-service` con gestión de comercios y soporte multi-tenant">
       <option name="closed" value="true" />
-      <created>1782615808378</created>
+      <created>1783826183258</created>
       <option name="number" value="00001" />
       <option name="presentableId" value="LOCAL-00001" />
       <option name="project" value="LOCAL" />
-      <updated>1782615808378</updated>
+      <updated>1783826183259</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="feat: Añadir colección completa de SmartStock en formato Postman para todos los microservicios">
+      <option name="closed" value="true" />
+      <created>1783826271510</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1783826271510</updated>
+    </task>
+    <task id="LOCAL-00003" summary="feat: Añadir DTOs para múltiples entidades en `smartstock-bff-service` y pruebas de integración para validación de flujos">
+      <option name="closed" value="true" />
+      <created>1783890364750</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1783890364750</updated>
+    </task>
+    <task id="LOCAL-00004" summary="feat: Implementar servicios y controladores para `Categoría`, `Proveedor` y `Rol`, añadiendo DTOs y pruebas en múltiples microservicios">
+      <option name="closed" value="true" />
+      <created>1783902925037</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1783902925037</updated>
+    </task>
+    <task id="LOCAL-00005" summary="feat: Configurar HikariCP en todos los microservicios para manejo de conexión a la base de datos">
+      <option name="closed" value="true" />
+      <created>1783916987378</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1783916987378</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="feat: Se eliminan los archivos del target y se agregan al gitignore" />
-    <MESSAGE value="feat: Se implementa CORS para la comunicacion con el front" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: Se implementa CORS para la comunicacion con el front" />
+    <MESSAGE value="refactor: Eliminar `UsuarioServiceImpl` y sus pruebas, deshabilitar CSRF en múltiples servicios, y actualizar configuraciones para simplificar implementación" />
+    <MESSAGE value="feat: Add complete SmartStock API collection for all microservices" />
+    <MESSAGE value="feat: Add comprehensive Postman collection for SmartStock API covering all microservices" />
+    <MESSAGE value="feat: Implementar microservicio `smartstock-commerce-service` con gestión de comercios y soporte multi-tenant" />
+    <MESSAGE value="feat: Añadir colección completa de SmartStock en formato Postman para todos los microservicios" />
+    <MESSAGE value="feat: Añadir DTOs para múltiples entidades en `smartstock-bff-service` y pruebas de integración para validación de flujos" />
+    <MESSAGE value="feat: Implementar servicios y controladores para `Categoría`, `Proveedor` y `Rol`, añadiendo DTOs y pruebas en múltiples microservicios" />
+    <MESSAGE value="feat: Configurar HikariCP en todos los microservicios para manejo de conexión a la base de datos" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: Configurar HikariCP en todos los microservicios para manejo de conexión a la base de datos" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
     <select />
-  </component>
-  <component name="github-copilot-workspace">
-    <instructionFileLocations>
-      <option value=".github/instructions" />
-    </instructionFileLocations>
-    <promptFileLocations>
-      <option value=".github/prompts" />
-    </promptFileLocations>
   </component>
 </project>

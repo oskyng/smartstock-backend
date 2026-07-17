@@ -3,7 +3,6 @@ package com.osanzana.smartstock.bff.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.osanzana.smartstock.bff.dto.ErrorResponseDTO;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NonNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -17,18 +16,9 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.OncePerRequestFilter;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -42,15 +32,22 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final ObjectMapper objectMapper;
 
+    @org.springframework.beans.factory.annotation.Value("${smartstock.allowed-origins:http://localhost:4200}")
+    private String allowedOrigins;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // El JWT viaja en una cookie httpOnly con SameSite=Strict (ver BffController.login):
+                // el navegador nunca la adjunta en peticiones cross-site, así que no hace falta el
+                // mecanismo de token CSRF de Spring Security además de eso.
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // A. Acceso público
                         .requestMatchers(
                                 "/api/v1/bff/auth/login",
+                                "/api/v1/bff/auth/logout",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
@@ -65,10 +62,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/bff/usuarios").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/bff/usuarios/**").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/bff/usuarios/**").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/bff/usuarios/**").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
                         .requestMatchers(HttpMethod.GET, "/api/v1/bff/roles").hasAnyRole("ADMIN_SISTEMA", "GERENTE_TIENDA")
 
                         // C. [GERENTE_TIENDA] - Dashboard y reglas de depreciación
                         .requestMatchers(HttpMethod.GET, "/api/v1/bff/dashboard").hasRole("GERENTE_TIENDA")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/bff/audit/stream").hasRole("GERENTE_TIENDA")
                         .requestMatchers(HttpMethod.GET, "/api/v1/bff/reglas-depreciacion/**").hasRole("GERENTE_TIENDA")
                         .requestMatchers(HttpMethod.POST, "/api/v1/bff/reglas-depreciacion/**").hasRole("GERENTE_TIENDA")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/bff/reglas-depreciacion/**").hasRole("GERENTE_TIENDA")
@@ -137,26 +136,16 @@ public class SecurityConfig {
         };
     }
 
-    private static final class CsrfCookieFilter extends OncePerRequestFilter {
-        @Override
-        protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
-                throws ServletException, IOException {
-            CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
-            if (csrfToken != null) {
-                csrfToken.getToken();
-            }
-            filterChain.doFilter(request, response);
-        }
-    }
-
     @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Collections.singletonList("*")); // En producción, especificar el dominio de Angular
+        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Comercio-ID"));
         configuration.setExposedHeaders(Collections.singletonList("Authorization"));
-        
+        // Necesario para que el navegador adjunte/reciba la cookie httpOnly de sesión.
+        configuration.setAllowCredentials(true);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

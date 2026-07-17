@@ -6,6 +6,7 @@ import com.osanzana.smartstock.auth.core.entities.Comercio;
 import com.osanzana.smartstock.auth.core.entities.Rol;
 import com.osanzana.smartstock.auth.core.entities.Usuario;
 import com.osanzana.smartstock.auth.core.repositories.UsuarioRepository;
+import com.osanzana.smartstock.auth.shared.dto.request.CambiarContrasenaRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioCreateRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioUpdateRequestDTO;
@@ -20,6 +21,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -134,6 +136,7 @@ class UsuarioControllerTest {
 
         mockMvc.perform(post("/api/v1/usuarios")
                 .header("X-Comercio-ID", "1")
+                .principal(new UsernamePasswordAuthenticationToken("admin@test.cl", null))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
@@ -152,7 +155,8 @@ class UsuarioControllerTest {
                 .thenReturn(List.of(UsuarioResponseDTO.builder().id(5L).email("op@test.cl").build()));
 
         mockMvc.perform(get("/api/v1/usuarios")
-                .header("X-Comercio-ID", "1"))
+                .header("X-Comercio-ID", "1")
+                .principal(new UsernamePasswordAuthenticationToken("gerente@test.cl", null)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].email").value("op@test.cl"));
     }
@@ -173,6 +177,7 @@ class UsuarioControllerTest {
 
         mockMvc.perform(put("/api/v1/usuarios/5")
                 .header("X-Comercio-ID", "1")
+                .principal(new UsernamePasswordAuthenticationToken("gerente@test.cl", null))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -189,7 +194,65 @@ class UsuarioControllerTest {
         when(usuarioRepository.findByEmail(anyString())).thenReturn(Optional.of(solicitante));
 
         mockMvc.perform(delete("/api/v1/usuarios/5")
-                .header("X-Comercio-ID", "1"))
+                .header("X-Comercio-ID", "1")
+                .principal(new UsernamePasswordAuthenticationToken("gerente@test.cl", null)))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithMockUser(username = "gerente@test.cl", roles = "GERENTE_TIENDA")
+    void reactivarUsuario_Success() throws Exception {
+        Rol rolGerente = Rol.builder().id(2L).nombre("GERENTE_TIENDA").build();
+        Comercio comercio = Comercio.builder().id(1L).build();
+        Usuario solicitante = Usuario.builder().id(1L).email("gerente@test.cl").rol(rolGerente).comercio(comercio).build();
+
+        when(usuarioRepository.findByEmail(anyString())).thenReturn(Optional.of(solicitante));
+        when(usuarioService.reactivar(eq(5L), eq(1L), eq("GERENTE_TIENDA")))
+                .thenReturn(UsuarioResponseDTO.builder().id(5L).activo(1).build());
+
+        mockMvc.perform(patch("/api/v1/usuarios/5/reactivar")
+                .header("X-Comercio-ID", "1")
+                .principal(new UsernamePasswordAuthenticationToken("gerente@test.cl", null)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activo").value(1));
+    }
+
+    @Test
+    @WithMockUser(username = "gerente@test.cl", roles = "GERENTE_TIENDA")
+    void cambiarContrasena_Success() throws Exception {
+        CambiarContrasenaRequestDTO request = new CambiarContrasenaRequestDTO();
+        request.setNuevaContrasena("claveNueva123");
+
+        Rol rolGerente = Rol.builder().id(2L).nombre("GERENTE_TIENDA").build();
+        Comercio comercio = Comercio.builder().id(1L).build();
+        Usuario solicitante = Usuario.builder().id(1L).email("gerente@test.cl").rol(rolGerente).comercio(comercio).build();
+
+        when(usuarioRepository.findByEmail(anyString())).thenReturn(Optional.of(solicitante));
+
+        mockMvc.perform(patch("/api/v1/usuarios/5/password")
+                .header("X-Comercio-ID", "1")
+                .principal(new UsernamePasswordAuthenticationToken("gerente@test.cl", null))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithMockUser(username = "gerente@test.cl", roles = "GERENTE_TIENDA")
+    void cambiarContrasena_ContrasenaMuyCorta_Retorna400() throws Exception {
+        CambiarContrasenaRequestDTO request = new CambiarContrasenaRequestDTO();
+        request.setNuevaContrasena("corta");
+
+        Rol rolGerente = Rol.builder().id(2L).nombre("GERENTE_TIENDA").build();
+        Comercio comercio = Comercio.builder().id(1L).build();
+        Usuario solicitante = Usuario.builder().id(1L).email("gerente@test.cl").rol(rolGerente).comercio(comercio).build();
+
+        when(usuarioRepository.findByEmail(anyString())).thenReturn(Optional.of(solicitante));
+
+        mockMvc.perform(patch("/api/v1/usuarios/5/password")
+                .header("X-Comercio-ID", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 }

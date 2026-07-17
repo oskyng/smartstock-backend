@@ -9,22 +9,27 @@
         <outputRelativeToContentRoot value="true" />
         <module name="smartstock-inventory-service" />
         <module name="smartstock-alert-service" />
-        <module name="smartstock-auth-service" />
         <module name="smartstock-bff-service" />
         <module name="smartstock-finance-service" />
       </profile>
+      <profile name="Annotation profile for smartstock-auth-service" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
+        </processorPath>
+        <module name="smartstock-auth-service" />
+        <module name="smartstock-commerce-service" />
+      </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="smartstock-common" target="17" />
-    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="smartstock-alert-service" options="-parameters" />
       <module name="smartstock-auth-service" options="-parameters" />
-      <module name="smartstock-backend" options="" />
       <module name="smartstock-bff-service" options="-parameters" />
-      <module name="smartstock-common" options="-parameters" />
+      <module name="smartstock-commerce-service" options="-parameters" />
       <module name="smartstock-finance-service" options="-parameters" />
       <module name="smartstock-inventory-service" options="-parameters" />
     </option>

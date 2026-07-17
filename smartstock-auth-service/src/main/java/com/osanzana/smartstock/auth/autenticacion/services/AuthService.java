@@ -6,8 +6,10 @@ import com.osanzana.smartstock.auth.shared.dto.request.AuthRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.response.AuthResponseDTO;
 import com.osanzana.smartstock.auth.shared.exception.BusinessException;
 import com.osanzana.smartstock.auth.shared.security.JwtUtils;
+import com.osanzana.smartstock.auth.shared.security.RateLimiterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,11 +26,20 @@ public class AuthService {
     private final UsuarioRepository usuarioRepository;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
+    private final RateLimiterService rateLimiterService;
 
     public AuthResponseDTO login(AuthRequestDTO request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
+        rateLimiterService.verificarNoBloqueado(request.getEmail());
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+        } catch (AuthenticationException ex) {
+            rateLimiterService.registrarFallo(request.getEmail());
+            throw ex;
+        }
+        rateLimiterService.registrarExito(request.getEmail());
 
         Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BusinessException("Usuario no encontrado post-autenticación"));

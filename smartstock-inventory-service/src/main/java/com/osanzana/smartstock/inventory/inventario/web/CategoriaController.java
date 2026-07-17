@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Inventario - Categorías", description = "Endpoints para la gestión de categorías de producto")
 @SecurityRequirement(name = "bearerAuth")
+@PreAuthorize("hasAnyRole('OPERADOR_INVENTARIO', 'GERENTE_TIENDA')")
 public class CategoriaController {
 
     private final CategoriaService categoriaService;

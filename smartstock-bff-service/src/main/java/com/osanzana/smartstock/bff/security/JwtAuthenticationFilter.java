@@ -2,6 +2,7 @@ package com.osanzana.smartstock.bff.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -28,22 +29,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return false;
     }
 
+    /**
+     * Login/logout son públicos (permitAll en SecurityConfig), pero logout normalmente SÍ trae
+     * la cookie de sesión — sin este bypass, la validación multi-tenant de abajo la rechazaría
+     * (403 por falta de X-Comercio-ID) antes de que el controller pudiera invalidarla.
+     */
+    @Override
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.equals("/api/v1/bff/auth/login") || path.equals("/api/v1/bff/auth/logout");
+    }
+
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-        final String authHeader = request.getHeader("Authorization");
-        final String jwt;
+        final String jwt = resolveToken(request);
         final String username;
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (jwt == null) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        jwt = authHeader.substring(7);
         try {
             username = jwtUtils.extractUsername(jwt);
 
@@ -98,10 +108,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             logger.error("Error al procesar el token JWT en BFF: " + e.getMessage());
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
-            response.getWriter().write("{\"error\": \"BFF Filter: Token invalido o expirado - " + e.getMessage() + "\"}");
+            response.getWriter().write("{\"error\": \"Token inválido o expirado\"}");
             return;
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * El JWT llega principalmente por la cookie httpOnly "ss_token" (ver BffController.login),
+     * con fallback al header Authorization: Bearer para clientes que no son el navegador
+     * (Postman, tests, futura integración server-to-server).
+     */
+    private String resolveToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (JwtUtils.AUTH_COOKIE_NAME.equals(cookie.getName()) && !cookie.getValue().isBlank()) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
     }
 }

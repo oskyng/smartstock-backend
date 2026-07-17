@@ -62,7 +62,7 @@ class AlertaControllerTest {
                 .codigoBarra("7801234500019")
                 .usuarioAsignadoId(2L)
                 .usuarioAsignadoNombre("Diego Silva")
-                .estadoAlerta("ESCALADA_AL_GERENTE")
+                .estadoAlerta("OMITIDA")
                 .build();
         when(alertaService.listarAuditoriaPorComercio(1L)).thenReturn(Collections.singletonList(auditoriaDTO));
 

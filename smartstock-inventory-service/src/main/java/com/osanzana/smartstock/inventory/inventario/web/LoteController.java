@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,19 +26,26 @@ public class LoteController {
 
     @Operation(summary = "Registrar un nuevo lote")
     @PostMapping
+    @PreAuthorize("hasRole('OPERADOR_INVENTARIO')")
     public ResponseEntity<LoteResponseDTO> crearLote(
             @RequestHeader("X-Comercio-ID") Long comercioId,
             @Valid @RequestBody LoteRequestDTO loteDto) {
-        
+
         LoteResponseDTO nuevoLote = loteService.guardarLote(loteDto, comercioId);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoLote);
     }
 
+    /**
+     * GERENTE_TIENDA también llega aquí indirectamente vía GET /bff/dashboard (capital en riesgo),
+     * y ADMIN_SISTEMA es el rol del token de servicio interno que el bff usa específicamente para
+     * esa misma llamada (ver SmartStockClient.listarLotesInterno / esLlamadaInterna en el service).
+     */
     @Operation(summary = "Listar lotes del comercio")
     @GetMapping
+    @PreAuthorize("hasAnyRole('OPERADOR_INVENTARIO', 'GERENTE_TIENDA', 'ADMIN_SISTEMA')")
     public ResponseEntity<List<LoteResponseDTO>> listarLotes(
             @RequestHeader("X-Comercio-ID") Long comercioId) {
-        
+
         List<LoteResponseDTO> lotes = loteService.listarPorComercio(comercioId);
         return ResponseEntity.ok(lotes);
     }

@@ -89,7 +89,7 @@ class ProductoServiceTest {
     @Test
     void obtenerPorId_Success() {
         when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
-        ProductoResponseDTO result = productoService.obtenerPorId(1L);
+        ProductoResponseDTO result = productoService.obtenerPorId(1L, 1L);
         assertNotNull(result);
         assertEquals(1L, result.getId());
     }
@@ -97,7 +97,15 @@ class ProductoServiceTest {
     @Test
     void obtenerPorId_NotFound() {
         when(productoRepository.findById(1L)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> productoService.obtenerPorId(1L));
+        assertThrows(ResourceNotFoundException.class, () -> productoService.obtenerPorId(1L, 1L));
+    }
+
+    @Test
+    void obtenerPorId_DeOtroComercio_LanzaNotFound() {
+        // El producto existe pero pertenece a otro comercio: debe comportarse como si no existiera
+        // (IDOR) en vez de confirmarle a un atacante que el ID pertenece a otro tenant.
+        when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
+        assertThrows(ResourceNotFoundException.class, () -> productoService.obtenerPorId(1L, 99L));
     }
     @Test
     void listarTodos_Success() {

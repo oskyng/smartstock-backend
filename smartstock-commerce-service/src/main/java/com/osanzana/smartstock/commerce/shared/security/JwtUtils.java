@@ -17,7 +17,7 @@ import java.util.function.Function;
 @Component
 public class JwtUtils {
 
-    @Value("${smartstock.jwt.secret:smartstock_super_secret_key_2026_jwt_token_must_be_long_enough}")
+    @Value("${smartstock.jwt.secret:dev_only_placeholder_secret_never_used_in_production_set_env_var}")
     private String secret;
 
     @Value("${smartstock.jwt.expiration:86400000}")

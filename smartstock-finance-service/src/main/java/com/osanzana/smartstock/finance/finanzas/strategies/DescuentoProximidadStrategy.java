@@ -35,9 +35,17 @@ public class DescuentoProximidadStrategy implements CalculoPrecioStrategy {
             log.info("[Strategy] Criterio de proximidad cumplido: {} días para vencimiento <= {} días críticos.",
                     diasParaVencimiento, regla.getDiasCriticosMin());
 
-            BigDecimal descuento = regla.getPorcentajeDescuento().divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
-            BigDecimal precioConDescuento = lote.getPrecioDinamico().multiply(BigDecimal.ONE.subtract(descuento));
-            
+            BigDecimal descuento = regla.getPorcentajeDescuento().divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
+            BigDecimal precioBase = lote.getProducto().getPrecioBase();
+            BigDecimal precioConDescuento = precioBase.multiply(BigDecimal.ONE.subtract(descuento))
+                    .setScale(2, RoundingMode.HALF_UP);
+
+            if (precioConDescuento.compareTo(lote.getPrecioDinamico()) >= 0) {
+                log.info("[Strategy] El lote {} ya tiene un precio igual o menor al calculado ({}); no se modifica.",
+                        lote.getId(), precioConDescuento);
+                return false;
+            }
+
             lote.setPrecioDinamico(precioConDescuento);
             loteRepository.save(lote);
 
@@ -54,7 +62,7 @@ public class DescuentoProximidadStrategy implements CalculoPrecioStrategy {
             kafkaTemplate.send("alerta-etiqueta", String.valueOf(lote.getId()), evento);
             return true;
         }
-        
+
         return false;
     }
 }

@@ -12,4 +12,7 @@ public interface AlertaAccionRepository extends JpaRepository<AlertaAccion, Long
     List<AlertaAccion> findByComercioId(Long comercioId);
     List<AlertaAccion> findByComercioIdAndEstadoAlerta(Long comercioId, String estadoAlerta);
     List<AlertaAccion> findByEstadoAlertaAndFechaLimiteAtencionBefore(String estadoAlerta, LocalDateTime fecha);
+
+    /** Guard de idempotencia: evita generar una alerta duplicada para un lote que ya tiene una. */
+    boolean existsByLoteId(Long loteId);
 }

@@ -73,4 +73,23 @@ class AlertaEventConsumerTest {
 
         verify(alertaRepository, never()).save(any());
     }
+
+    @Test
+    void consumeAlertaDescuento_ComercioDelEventoNoCoincideConElLote_NoGeneraAlerta() {
+        // El lote real pertenece al comercio 1, pero el evento (potencialmente malformado o de
+        // otro origen) dice ser del comercio 99: no debe asignarse a un reponedor de otro comercio.
+        AlertaDescuentoEvent eventoComercioIncorrecto = AlertaDescuentoEvent.builder()
+                .loteId(1L)
+                .productoNombre("Test Prod")
+                .porcentajeDescuento(new BigDecimal("10"))
+                .nuevoPrecio(new BigDecimal("90"))
+                .comercioId(99L)
+                .build();
+        when(loteRepository.findById(1L)).thenReturn(Optional.of(lote));
+
+        consumer.consumeAlertaDescuento(eventoComercioIncorrecto);
+
+        verify(alertaRepository, never()).save(any());
+        verifyNoInteractions(usuarioRepository);
+    }
 }

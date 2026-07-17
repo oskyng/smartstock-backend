@@ -37,7 +37,7 @@ class DescuentoProximidadStrategyTest {
     void setUp() {
         lote = LoteInventario.builder()
                 .id(1L)
-                .producto(Producto.builder().nombre("Producto Test").build())
+                .producto(Producto.builder().nombre("Producto Test").precioBase(new BigDecimal("100.00")).build())
                 .comercio(Comercio.builder().id(1L).build())
                 .precioDinamico(new BigDecimal("100.00"))
                 .fechaVencimiento(LocalDate.now().plusDays(5))
@@ -65,7 +65,7 @@ class DescuentoProximidadStrategyTest {
         boolean resultado = strategy.aplicar(lote, regla);
 
         assertTrue(resultado);
-        assertEquals(new BigDecimal("80.0000"), lote.getPrecioDinamico());
+        assertEquals(new BigDecimal("80.00"), lote.getPrecioDinamico());
         verify(loteRepository).save(lote);
         verify(kafkaTemplate).send(eq("alerta-etiqueta"), anyString(), any(AlertaDescuentoEvent.class));
     }
@@ -78,5 +78,33 @@ class DescuentoProximidadStrategyTest {
         assertFalse(resultado);
         assertEquals(new BigDecimal("100.00"), lote.getPrecioDinamico());
         verify(loteRepository, never()).save(any());
+    }
+
+    @Test
+    void aplicar_EsIdempotente_NoRecomponeDescuentoYaAplicado() {
+        // Simula que el lote ya tiene el descuento del 20% aplicado (80.00, calculado sobre
+        // los mismos 100.00 de precioBase). Reevaluar la misma regla no debe volver a descontar
+        // sobre el precio ya descontado (lo que daría 64.00 si se compusiera incorrectamente).
+        lote.setPrecioDinamico(new BigDecimal("80.00"));
+
+        boolean resultado = strategy.aplicar(lote, regla);
+
+        assertFalse(resultado);
+        assertEquals(new BigDecimal("80.00"), lote.getPrecioDinamico());
+        verify(loteRepository, never()).save(any());
+    }
+
+    @Test
+    void aplicar_ReglaMasAgresiva_ProfundizaElDescuento() {
+        // El lote ya tiene el descuento del 20% aplicado; una regla más agresiva (50%) debe
+        // profundizar el precio, ya que el resultado (50.00) es menor al actual (80.00).
+        lote.setPrecioDinamico(new BigDecimal("80.00"));
+        regla.setPorcentajeDescuento(new BigDecimal("50.00"));
+
+        boolean resultado = strategy.aplicar(lote, regla);
+
+        assertTrue(resultado);
+        assertEquals(new BigDecimal("50.00"), lote.getPrecioDinamico());
+        verify(loteRepository).save(lote);
     }
 }

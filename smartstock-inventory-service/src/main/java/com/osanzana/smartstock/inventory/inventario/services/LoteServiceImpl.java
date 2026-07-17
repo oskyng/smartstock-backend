@@ -17,6 +17,8 @@ import com.osanzana.smartstock.inventory.shared.exception.BusinessException;
 import com.osanzana.smartstock.inventory.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,9 +50,11 @@ public class LoteServiceImpl implements LoteService {
         }
 
         Producto producto = productoRepository.findById(dto.getIdProducto())
+                .filter(p -> p.getComercio().getId().equals(comercioId))
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
 
         Proveedor proveedor = proveedorRepository.findById(dto.getIdProveedor())
+                .filter(p -> p.getComercio().getId().equals(comercioId))
                 .orElseThrow(() -> new ResourceNotFoundException("Proveedor no encontrado"));
 
         Comercio comercio = comercioRepository.findById(comercioId)
@@ -103,11 +107,28 @@ public class LoteServiceImpl implements LoteService {
         return LoteResponseDTO.builder()
                 .id(lote.getId())
                 .nombreProducto(lote.getProducto().getNombre())
+                .nombreCategoria(lote.getProducto().getCategoria().getNombre())
                 .cantidadActual(lote.getCantidadActual())
+                .costoUnitario(esLlamadaInterna() ? lote.getCostoUnitario() : null)
                 .precioDinamico(lote.getPrecioDinamico())
                 .fechaVencimiento(lote.getFechaVencimiento())
                 .estadoLote(lote.getEstadoLote())
                 .fechaRecepcion(lote.getFechaRecepcion())
                 .build();
+    }
+
+    /**
+     * El costo unitario nunca debe llegar a un usuario humano (ni siquiera GERENTE_TIENDA u
+     * OPERADOR_INVENTARIO): solo el bff lo necesita, vía un token de servicio interno
+     * (rol ADMIN_SISTEMA), para calcular el Capital en Riesgo del dashboard.
+     */
+    private boolean esLlamadaInterna() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return false;
+        }
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_ADMIN_SISTEMA"::equals);
     }
 }

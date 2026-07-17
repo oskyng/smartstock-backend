@@ -15,7 +15,10 @@ import java.util.function.Function;
 @Component
 public class JwtUtils {
 
-    @Value("${smartstock.jwt.secret:smartstock_super_secret_key_2026_jwt_token_must_be_long_enough}")
+    /** Nombre de la cookie httpOnly de sesión (ver BffController.login/logout, JwtAuthenticationFilter, WebClientConfig). */
+    public static final String AUTH_COOKIE_NAME = "ss_token";
+
+    @Value("${smartstock.jwt.secret:dev_only_placeholder_secret_never_used_in_production_set_env_var}")
     private String secret;
 
     private SecretKey getSigningKey() {
@@ -71,6 +74,23 @@ public class JwtUtils {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    /**
+     * Token de corta duración para llamadas server-to-server (ej. bff -> inventory-service al
+     * calcular el Capital en Riesgo del dashboard), sin depender del rol/JWT del usuario real
+     * detrás de la petición. Rol ADMIN_SISTEMA para evitar la validación de X-Comercio-ID
+     * (multi-tenant), ya que estas llamadas ya envían ese header explícitamente. Mismo patrón que
+     * alert-service usa para sus llamadas internas a finance-service.
+     */
+    public String generarTokenServicioInterno() {
+        return Jwts.builder()
+                .subject("bff-service")
+                .claim("rol", "ADMIN_SISTEMA")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 60_000))
+                .signWith(getSigningKey())
+                .compact();
     }
 
     public Boolean validateToken(String token) {

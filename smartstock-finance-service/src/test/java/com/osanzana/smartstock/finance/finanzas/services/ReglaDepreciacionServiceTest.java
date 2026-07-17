@@ -98,14 +98,23 @@ class ReglaDepreciacionServiceTest {
     @Test
     void eliminar_Success() {
         when(repository.findById(1L)).thenReturn(Optional.of(regla));
-        service.eliminar(1L);
+        service.eliminar(1L, 1L);
         verify(repository).delete(regla);
     }
 
     @Test
     void eliminar_NotFound() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> service.eliminar(1L));
+        assertThrows(ResourceNotFoundException.class, () -> service.eliminar(1L, 1L));
+    }
+
+    @Test
+    void eliminar_DeOtroComercio_LanzaNotFound() {
+        // La regla existe pero pertenece a otro comercio: debe comportarse como si no existiera,
+        // para no confirmarle a un atacante que el ID pertenece a otro tenant (IDOR).
+        when(repository.findById(1L)).thenReturn(Optional.of(regla));
+        assertThrows(ResourceNotFoundException.class, () -> service.eliminar(1L, 99L));
+        verify(repository, never()).delete(any(ReglaDepreciacion.class));
     }
 
     @Test
