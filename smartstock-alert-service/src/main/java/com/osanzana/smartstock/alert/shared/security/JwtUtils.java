@@ -19,7 +19,7 @@ import java.util.function.Function;
 @Component
 public class JwtUtils {
 
-    @Value("${smartstock.jwt.secret:smartstock_super_secret_key_2026_jwt_token_must_be_long_enough}")
+    @Value("${smartstock.jwt.secret:dev_only_placeholder_secret_never_used_in_production_set_env_var}")
     private String secret;
 
     @Value("${smartstock.jwt.expiration:86400000}")
@@ -75,6 +75,22 @@ public class JwtUtils {
             }
             return (Long) idComercio;
         });
+    }
+
+    /**
+     * Emite un JWT de muy corta duración para llamadas internas servicio-a-servicio (p.ej.
+     * alert-service consultando reglas de depreciación en finance-service), donde no hay un
+     * usuario real detrás de la petición. Rol ADMIN_SISTEMA para evitar la validación de
+     * X-Comercio-ID (multi-tenant), ya que estas llamadas ya envían ese header explícitamente.
+     */
+    public String generarTokenServicioInterno() {
+        return Jwts.builder()
+                .subject("alert-service")
+                .claim("rol", "ADMIN_SISTEMA")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 60_000))
+                .signWith(getSigningKey())
+                .compact();
     }
 
     public String generateToken(UserDetails userDetails, Map<String, Object> extraClaims) {
