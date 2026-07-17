@@ -19,7 +19,7 @@ import java.util.function.Function;
 @Component
 public class JwtUtils {
 
-    @Value("${smartstock.jwt.secret:smartstock_super_secret_key_2026_jwt_token_must_be_long_enough}")
+    @Value("${smartstock.jwt.secret:dev_only_placeholder_secret_never_used_in_production_set_env_var}")
     private String secret;
 
     @Value("${smartstock.jwt.expiration:86400000}")
@@ -68,6 +68,26 @@ public class JwtUtils {
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey())
                 .compact();
+    }
+
+    /**
+     * Token de corta duración exclusivo para el paso "restablecer contraseña" del flujo de
+     * recuperación. Lleva el claim "purpose" para que reset-password pueda rechazar un token de
+     * login normal (que también pasaría la autenticación genérica del filtro JWT al no llevar
+     * roles) y solo aceptar uno emitido específicamente tras verificar el código de 6 dígitos.
+     */
+    public String generarTokenRestablecimiento(String email) {
+        return Jwts.builder()
+                .subject(email)
+                .claim("purpose", "PASSWORD_RESET")
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + 600_000)) // 10 minutos
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    public String extractPurpose(String token) {
+        return extractClaim(token, claims -> (String) claims.get("purpose"));
     }
 
     public Boolean validateToken(String token, UserDetails userDetails) {

@@ -45,4 +45,20 @@ class JwtUtilsTest {
         Boolean isExpired = ReflectionTestUtils.invokeMethod(jwtUtils, "isTokenExpired", token);
         assertFalse(isExpired);
     }
+
+    @Test
+    void generarTokenRestablecimiento_LlevaPurposeYSubjectCorrectos() {
+        String token = jwtUtils.generarTokenRestablecimiento("gerente@test.com");
+
+        assertNotNull(token);
+        assertEquals("gerente@test.com", jwtUtils.extractUsername(token));
+        assertEquals("PASSWORD_RESET", jwtUtils.extractPurpose(token));
+        assertTrue(jwtUtils.validateToken(token, null));
+    }
+
+    @Test
+    void extractPurpose_TokenDeLoginNormal_NoTienePurpose() {
+        String token = jwtUtils.generateToken(userDetails, new HashMap<>());
+        assertNull(jwtUtils.extractPurpose(token));
+    }
 }
