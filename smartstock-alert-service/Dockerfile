@@ -10,13 +10,17 @@ COPY src/main/resources/Wallet_SmartStock /app/wallet
 
 RUN mvn clean package -DskipTests
 
-FROM eclipse-temurin:21-jdk
+FROM eclipse-temurin:21-jre
+
+RUN addgroup --system smartstock && adduser --system --ingroup smartstock smartstock
 
 WORKDIR /app
 
-COPY --from=build /app/target/*.jar app-ms.jar
-COPY --from=build /app/wallet /app/wallet
+COPY --from=build --chown=smartstock:smartstock /app/target/*.jar app-ms.jar
+COPY --from=build --chown=smartstock:smartstock /app/wallet /app/wallet
 
 ENV TNS_ADMIN=/app/wallet
 
-ENTRYPOINT ["java", "-jar", "app-ms.jar"]
+USER smartstock
+
+ENTRYPOINT ["java", "-Xms128m", "-Xmx256m", "-jar", "app-ms.jar"]

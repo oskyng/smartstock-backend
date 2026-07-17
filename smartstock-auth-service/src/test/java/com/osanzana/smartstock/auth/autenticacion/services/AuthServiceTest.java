@@ -8,6 +8,7 @@ import com.osanzana.smartstock.auth.shared.dto.request.AuthRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.response.AuthResponseDTO;
 import com.osanzana.smartstock.auth.shared.exception.BusinessException;
 import com.osanzana.smartstock.auth.shared.security.JwtUtils;
+import com.osanzana.smartstock.auth.shared.security.RateLimiterService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,8 +16,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
+import com.osanzana.smartstock.auth.shared.exception.TooManyAttemptsException;
 
 import java.util.Optional;
 
@@ -34,6 +37,8 @@ class AuthServiceTest {
     private AuthenticationManager authenticationManager;
     @Mock
     private JwtUtils jwtUtils;
+    @Mock
+    private RateLimiterService rateLimiterService;
 
     @InjectMocks
     private AuthService authService;
@@ -66,6 +71,27 @@ class AuthServiceTest {
         assertEquals("test@example.com", response.getEmail());
         assertEquals("ADMIN", response.getRol());
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        verify(rateLimiterService).verificarNoBloqueado(authRequest.getEmail());
+        verify(rateLimiterService).registrarExito(authRequest.getEmail());
+    }
+
+    @Test
+    void login_Bloqueado_LanzaExcepcionSinAutenticar() {
+        doThrow(new TooManyAttemptsException("Demasiados intentos fallidos"))
+                .when(rateLimiterService).verificarNoBloqueado(authRequest.getEmail());
+
+        assertThrows(TooManyAttemptsException.class, () -> authService.login(authRequest));
+        verify(authenticationManager, never()).authenticate(any());
+    }
+
+    @Test
+    void login_CredencialesInvalidas_RegistraFallo() {
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenThrow(new BadCredentialsException("Bad credentials"));
+
+        assertThrows(BadCredentialsException.class, () -> authService.login(authRequest));
+        verify(rateLimiterService).registrarFallo(authRequest.getEmail());
+        verify(rateLimiterService, never()).registrarExito(anyString());
     }
 
     @Test

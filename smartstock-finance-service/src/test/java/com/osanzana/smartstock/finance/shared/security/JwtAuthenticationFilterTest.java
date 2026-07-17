@@ -12,6 +12,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -40,8 +42,9 @@ class JwtAuthenticationFilterTest {
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         SecurityContextHolder.clearContext();
+        lenient().when(response.getWriter()).thenReturn(new PrintWriter(new StringWriter()));
     }
 
     @Test
@@ -71,7 +74,7 @@ class JwtAuthenticationFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
         when(jwtUtils.extractUsername(token)).thenReturn(userEmail);
         when(jwtUtils.validateToken(token, null)).thenReturn(true);
-        when(jwtUtils.extractRoles(token)).thenReturn(List.of("ADMIN"));
+        when(jwtUtils.extractRoles(token)).thenReturn(List.of("ADMIN_SISTEMA"));
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
@@ -100,10 +103,12 @@ class JwtAuthenticationFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
         when(jwtUtils.extractUsername(token)).thenThrow(new RuntimeException("Error"));
 
-        // The filter should catch the exception, stop processing and call doFilter
+        // El filtro debe cortar la cadena tras un token inválido (401 ya escrito en la respuesta),
+        // no dejar que la petición siga como si fuera anónima hacia el controlador.
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        verify(filterChain).doFilter(request, response);
+        verify(filterChain, never()).doFilter(request, response);
+        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         verify(jwtUtils, times(1)).extractUsername(token);
         assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
