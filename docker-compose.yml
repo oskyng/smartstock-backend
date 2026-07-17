@@ -132,3 +132,5 @@ services:
       - "80:80"
     depends_on:
       - bff-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod

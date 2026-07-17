@@ -69,12 +69,34 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
+  # El servidor (EC2 Amazon Linux) nunca clona el repo: solo necesita docker-compose.yml
+  # (que este job mantiene sincronizado por scp) y las imágenes publicadas en Docker Hub.
   deploy:
     needs: [changes, test-and-build]
     if: needs.changes.outputs.services != '[]'
     runs-on: ubuntu-latest
     steps:
-      - name: Pull y recrear los servicios modificados en el servidor
+      - uses: actions/checkout@v4
+
+      - name: Asegurar que exista el directorio de despliegue
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: mkdir -p "${{ secrets.DEPLOY_PATH }}"
+
+      - name: Copiar docker-compose.yml al servidor
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: docker-compose.yml
+          target: ${{ secrets.DEPLOY_PATH }}
+          strip_components: 0
+
+      - name: Pull y recrear los servicios modificados
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -83,7 +105,6 @@ jobs:
           script: |
             set -e
             cd "${{ secrets.DEPLOY_PATH }}"
-            git pull origin main
             SERVICES="${{ join(fromJson(needs.changes.outputs.services), ' ') }}"
             echo "Servicios a redesplegar: $SERVICES"
             docker compose pull $SERVICES
