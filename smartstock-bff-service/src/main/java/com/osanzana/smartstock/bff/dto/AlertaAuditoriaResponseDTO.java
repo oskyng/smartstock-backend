@@ -3,6 +3,7 @@ package com.osanzana.smartstock.bff.dto;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -18,4 +19,6 @@ public class AlertaAuditoriaResponseDTO {
     private LocalDateTime fechaLimiteAtencion;
     private LocalDateTime fechaAtencion;
     private String descripcionAlerta;
+    private LocalDate fechaVencimientoLote;
+    private boolean loteVencido;
 }

@@ -9,6 +9,8 @@ import com.osanzana.smartstock.alert.core.repositories.UsuarioRepository;
 import com.osanzana.smartstock.alert.shared.dto.response.AlertaAuditoriaResponseDTO;
 import com.osanzana.smartstock.alert.shared.dto.response.AlertaResponseDTO;
 import com.osanzana.smartstock.alert.shared.exception.BusinessException;
+import com.osanzana.smartstock.alert.shared.exception.ResourceNotFoundException;
+import com.osanzana.smartstock.alert.shared.security.JwtUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,6 +40,8 @@ class AlertaServiceImplTest {
     private LoteRepository loteRepository;
     @Mock
     private AlertaEventProducer alertaEventProducer;
+    @Mock
+    private JwtUtils jwtUtils;
 
     @InjectMocks
     private AlertaServiceImpl alertaService;
@@ -115,7 +119,7 @@ class AlertaServiceImplTest {
         alerta.setFechaLimiteAtencion(LocalDateTime.now().plusHours(1));
         when(alertaRepository.findById(1L)).thenReturn(Optional.of(alerta));
 
-        alertaService.atenderAlerta(1L);
+        alertaService.atenderAlerta(1L, 1L);
 
         assertEquals("ATENDIDA_A_TIEMPO", alerta.getEstadoAlerta());
         assertNotNull(alerta.getFechaAtencion());
@@ -127,11 +131,21 @@ class AlertaServiceImplTest {
         alerta.setFechaLimiteAtencion(LocalDateTime.now().minusHours(1));
         when(alertaRepository.findById(1L)).thenReturn(Optional.of(alerta));
 
-        alertaService.atenderAlerta(1L);
+        alertaService.atenderAlerta(1L, 1L);
 
         assertEquals("ATENDIDA_CON_RETRASO", alerta.getEstadoAlerta());
         assertNotNull(alerta.getFechaAtencion());
         verify(alertaRepository).save(alerta);
+    }
+
+    @Test
+    void atenderAlerta_DeOtroComercio_LanzaNotFound() {
+        // La alerta existe pero pertenece a otro comercio: debe comportarse como si no existiera
+        // (IDOR) en vez de permitir que un reponedor de otro comercio la marque como atendida.
+        when(alertaRepository.findById(1L)).thenReturn(Optional.of(alerta));
+
+        assertThrows(ResourceNotFoundException.class, () -> alertaService.atenderAlerta(1L, 99L));
+        verify(alertaRepository, never()).save(any(AlertaAccion.class));
     }
 
     @Test
@@ -141,7 +155,7 @@ class AlertaServiceImplTest {
 
         alertaService.procesarEscalamientoSLA();
 
-        assertEquals("ESCALADA_AL_GERENTE", alerta.getEstadoAlerta());
+        assertEquals("OMITIDA", alerta.getEstadoAlerta());
         verify(alertaRepository).save(alerta);
     }
 
@@ -160,6 +174,8 @@ class AlertaServiceImplTest {
         assertEquals(2L, dto.getUsuarioAsignadoId());
         assertEquals("Diego Silva", dto.getUsuarioAsignadoNombre());
         assertEquals("PENDIENTE", dto.getEstadoAlerta());
+        assertEquals(lote.getFechaVencimiento(), dto.getFechaVencimientoLote());
+        assertFalse(dto.isLoteVencido());
     }
 
     @Test
@@ -171,5 +187,53 @@ class AlertaServiceImplTest {
 
         assertNull(result.get(0).getUsuarioAsignadoId());
         assertEquals("Sin asignar", result.get(0).getUsuarioAsignadoNombre());
+    }
+
+    @Test
+    void listarAuditoriaPorComercio_LoteVencido_MarcaLoteVencidoTrue() {
+        // Lote OMITIDA cuya fecha_vencimiento ya pasó: venció físicamente en góndola sin gestionarse.
+        lote.setFechaVencimiento(LocalDate.now().minusDays(2));
+        alerta.setEstadoAlerta("OMITIDA");
+        when(alertaRepository.findByComercioId(1L)).thenReturn(Collections.singletonList(alerta));
+
+        List<AlertaAuditoriaResponseDTO> result = alertaService.listarAuditoriaPorComercio(1L);
+
+        assertTrue(result.get(0).isLoteVencido());
+        assertEquals(lote.getFechaVencimiento(), result.get(0).getFechaVencimientoLote());
+    }
+
+    @Test
+    void reconciliarLotesSinAlerta_SinLotes_NoHaceNada() {
+        when(loteRepository.findAll()).thenReturn(Collections.emptyList());
+
+        alertaService.reconciliarLotesSinAlerta();
+
+        verify(alertaRepository, never()).save(any(AlertaAccion.class));
+    }
+
+    @Test
+    void reconciliarLotesSinAlerta_TodosLosLotesYaTienenAlerta_NoConsultaReglas() {
+        when(loteRepository.findAll()).thenReturn(Collections.singletonList(lote));
+        when(alertaRepository.existsByLoteId(1L)).thenReturn(true);
+
+        alertaService.reconciliarLotesSinAlerta();
+
+        verify(alertaRepository, never()).save(any(AlertaAccion.class));
+        verifyNoInteractions(usuarioRepository);
+    }
+
+    @Test
+    void reconciliarLotesSinAlerta_FinanceServiceNoDisponible_NoRompeNiGeneraAlertas() {
+        // Simula un lote vencido (2 días atrás) sin alerta, típico caso de "downtime durante
+        // los días previos al vencimiento". Como finance-service no está disponible en el test
+        // (RestClient real sin servidor detrás), el guard de errores debe capturarlo y seguir
+        // sin propagar la excepción ni guardar nada.
+        lote.setFechaVencimiento(LocalDate.now().minusDays(2));
+        when(loteRepository.findAll()).thenReturn(Collections.singletonList(lote));
+        when(alertaRepository.existsByLoteId(1L)).thenReturn(false);
+
+        assertDoesNotThrow(() -> alertaService.reconciliarLotesSinAlerta());
+
+        verify(alertaRepository, never()).save(any(AlertaAccion.class));
     }
 }

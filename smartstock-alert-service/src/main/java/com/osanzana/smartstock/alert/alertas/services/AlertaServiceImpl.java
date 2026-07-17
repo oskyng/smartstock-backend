@@ -8,6 +8,7 @@ import com.osanzana.smartstock.alert.core.repositories.UsuarioRepository;
 import com.osanzana.smartstock.alert.core.entities.ReglaDepreciacion;
 import com.osanzana.smartstock.alert.core.entities.LoteInventario;
 import com.osanzana.smartstock.alert.core.repositories.LoteRepository;
+import com.osanzana.smartstock.alert.shared.security.JwtUtils;
 import com.osanzana.smartstock.alert.shared.dto.events.AlertaEscaladaEvent;
 import com.osanzana.smartstock.alert.shared.dto.events.LoteEventDTO;
 import com.osanzana.smartstock.alert.shared.dto.response.AlertaAuditoriaResponseDTO;
@@ -28,6 +29,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,11 +41,14 @@ public class AlertaServiceImpl implements AlertaService {
     private final UsuarioRepository usuarioRepository;
     private final LoteRepository loteRepository;
     private final AlertaEventProducer alertaEventProducer;
+    private final JwtUtils jwtUtils;
 
     @Value("${smartstock.services.finance.url:http://localhost:8083}")
     private String financeServiceUrl;
 
     private final RestClient restClient = RestClient.create();
+
+    private final Object alertaGenerationLock = new Object();
 
     @Override
     @Transactional(readOnly = true)
@@ -117,8 +122,9 @@ public class AlertaServiceImpl implements AlertaService {
 
     @Override
     @Transactional
-    public void atenderAlerta(Long alertaId) {
+    public void atenderAlerta(Long alertaId, Long comercioId) {
         AlertaAccion alerta = alertaRepository.findById(alertaId)
+                .filter(a -> comercioId == null || a.getComercio().getId().equals(comercioId))
                 .orElseThrow(() -> new ResourceNotFoundException("Alerta no encontrada con ID: " + alertaId));
 
         LocalDateTime ahora = LocalDateTime.now();
@@ -138,8 +144,8 @@ public class AlertaServiceImpl implements AlertaService {
         List<AlertaAccion> expiradas = alertaRepository.findByEstadoAlertaAndFechaLimiteAtencionBefore("PENDIENTE", LocalDateTime.now());
         
         expiradas.forEach(alerta -> {
-            log.warn("Escalando alerta {} por vencimiento de SLA", alerta.getId());
-            alerta.setEstadoAlerta("ESCALADA_AL_GERENTE");
+            log.warn("Marcando alerta {} como OMITIDA por vencimiento de SLA (operario no confirmó a tiempo)", alerta.getId());
+            alerta.setEstadoAlerta("OMITIDA");
             alertaRepository.save(alerta);
 
             // Notificar vía Kafka
@@ -164,38 +170,95 @@ public class AlertaServiceImpl implements AlertaService {
         log.info("[LOGIC] Procesando nuevo lote {} para el comercio {}", loteEvent.getId(), loteEvent.getComercioId());
 
         try {
-            // 1. Obtener reglas financieras para el comercio
-            List<ReglaDepreciacionResponseDTO> reglas = restClient.get()
-                    .uri(financeServiceUrl + "/api/v1/reglas-depreciacion")
-                    .header("X-Comercio-ID", String.valueOf(loteEvent.getComercioId()))
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<List<ReglaDepreciacionResponseDTO>>() {});
-
-            if (reglas == null || reglas.isEmpty()) {
+            List<ReglaDepreciacionResponseDTO> reglas = obtenerReglasActivas(loteEvent.getComercioId());
+            if (reglas.isEmpty()) {
                 log.info("No se encontraron reglas de depreciación activas para el comercio {}", loteEvent.getComercioId());
                 return;
             }
 
-            // 2. Buscar lote en la base de datos local
             LoteInventario lote = loteRepository.findById(loteEvent.getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Lote no encontrado localmente: " + loteEvent.getId()));
 
-            // 3. Evaluar si aplica alguna regla por días críticos
+            if (!lote.getComercio().getId().equals(loteEvent.getComercioId())) {
+                throw new BusinessException("El comercio del evento (" + loteEvent.getComercioId()
+                        + ") no coincide con el comercio real del lote " + loteEvent.getId()
+                        + " (" + lote.getComercio().getId() + ")");
+            }
+
+            evaluarYGenerarAlerta(lote, reglas);
+        } catch (Exception e) {
+            log.error("Error al procesar nuevo lote para alertas", e);
+        }
+    }
+
+    @Override
+    public void reconciliarLotesSinAlerta() {
+        log.info("[RECONCILIACION] Revisando lotes sin alerta generada...");
+
+        List<LoteInventario> lotesSinAlerta = loteRepository.findAll().stream()
+                .filter(lote -> !alertaRepository.existsByLoteId(lote.getId()))
+                .collect(Collectors.toList());
+
+        if (lotesSinAlerta.isEmpty()) {
+            log.info("[RECONCILIACION] No hay lotes pendientes de evaluación.");
+            return;
+        }
+
+        // Se agrupa por comercio para no repetir la consulta de reglas por cada lote.
+        Map<Long, List<LoteInventario>> lotesPorComercio = lotesSinAlerta.stream()
+                .collect(Collectors.groupingBy(lote -> lote.getComercio().getId()));
+
+        int generadas = 0;
+        for (Map.Entry<Long, List<LoteInventario>> entry : lotesPorComercio.entrySet()) {
+            Long comercioId = entry.getKey();
+            try {
+                List<ReglaDepreciacionResponseDTO> reglas = obtenerReglasActivas(comercioId);
+                if (reglas.isEmpty()) {
+                    continue;
+                }
+                for (LoteInventario lote : entry.getValue()) {
+                    if (evaluarYGenerarAlerta(lote, reglas)) {
+                        generadas++;
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Error al reconciliar alertas del comercio {}", comercioId, e);
+            }
+        }
+
+        log.info("[RECONCILIACION] Finalizada: {} alerta(s) generada(s) retroactivamente de {} lote(s) revisados.",
+                generadas, lotesSinAlerta.size());
+    }
+
+    private List<ReglaDepreciacionResponseDTO> obtenerReglasActivas(Long comercioId) {
+        List<ReglaDepreciacionResponseDTO> reglas = restClient.get()
+                .uri(financeServiceUrl + "/api/v1/reglas-depreciacion")
+                .header("Authorization", "Bearer " + jwtUtils.generarTokenServicioInterno())
+                .header("X-Comercio-ID", String.valueOf(comercioId))
+                .retrieve()
+                .body(new ParameterizedTypeReference<List<ReglaDepreciacionResponseDTO>>() {});
+        return reglas != null ? reglas : List.of();
+    }
+
+    /** Evalúa un lote contra las reglas vigentes y genera la alerta si corresponde y aún no existe. */
+    private boolean evaluarYGenerarAlerta(LoteInventario lote, List<ReglaDepreciacionResponseDTO> reglas) {
+        synchronized (alertaGenerationLock) {
+            if (alertaRepository.existsByLoteId(lote.getId())) {
+                return false;
+            }
+
             long diasParaVencer = ChronoUnit.DAYS.between(LocalDate.now(), lote.getFechaVencimiento());
 
-            reglas.stream()
+            return reglas.stream()
                     .filter(r -> r.getActiva() == 1 && diasParaVencer <= r.getDiasCriticosMin())
                     .findFirst()
-                    .ifPresent(regla -> {
-                        log.info("Aplicando regla de depreciación: {} días críticos, {}% descuento", 
-                                regla.getDiasCriticosMin(), regla.getPorcentajeDescuento());
-                        
-                        // Crear alerta de acción
+                    .map(regla -> {
+                        log.info("Aplicando regla de depreciación: {} días críticos, {}% descuento (lote {})",
+                                regla.getDiasCriticosMin(), regla.getPorcentajeDescuento(), lote.getId());
                         generarAlertaDescuentoDirecta(lote, regla);
-                    });
-
-        } catch (Exception e) {
-            log.error("Error al procesar nuevo lote para alertas: {}", e.getMessage());
+                        return true;
+                    })
+                    .orElse(false);
         }
     }
 
@@ -203,6 +266,11 @@ public class AlertaServiceImpl implements AlertaService {
         Usuario reponedor = usuarioRepository.findByRolNombreAndActivoAndComercioId("REPONEDOR_SALA", 1, lote.getComercio().getId())
                 .stream().findFirst()
                 .orElseThrow(() -> new BusinessException("No se encontró un REPONEDOR_SALA activo para el comercio ID: " + lote.getComercio().getId()));
+
+        // El supervisor es el GERENTE_TIENDA del comercio: la columna id_usuario_supervisor es NOT NULL.
+        Usuario supervisor = usuarioRepository.findByRolNombreAndActivoAndComercioId("GERENTE_TIENDA", 1, lote.getComercio().getId())
+                .stream().findFirst()
+                .orElseThrow(() -> new BusinessException("No se encontró un GERENTE_TIENDA activo para el comercio ID: " + lote.getComercio().getId()));
 
         String descripcion = String.format("APLICAR PRECIO DINÁMICO: Descuento del %s%% activo por proximidad de vencimiento.",
                 regla.getPorcentajeDescuento());
@@ -213,6 +281,7 @@ public class AlertaServiceImpl implements AlertaService {
                 .descripcionAlerta(descripcion)
                 .estadoAlerta("PENDIENTE")
                 .usuarioAsignado(reponedor)
+                .usuarioSupervisor(supervisor)
                 .fechaLimiteAtencion(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES).plusHours(24))
                 .build();
 
@@ -233,6 +302,7 @@ public class AlertaServiceImpl implements AlertaService {
 
     private AlertaAuditoriaResponseDTO mapToAuditoriaResponseDTO(AlertaAccion alerta) {
         Usuario asignado = alerta.getUsuarioAsignado();
+        java.time.LocalDate fechaVencimientoLote = alerta.getLote().getFechaVencimiento();
         return AlertaAuditoriaResponseDTO.builder()
                 .id(alerta.getId())
                 .loteId(alerta.getLote().getId())
@@ -244,6 +314,8 @@ public class AlertaServiceImpl implements AlertaService {
                 .fechaLimiteAtencion(alerta.getFechaLimiteAtencion())
                 .fechaAtencion(alerta.getFechaAtencion())
                 .descripcionAlerta(alerta.getDescripcionAlerta())
+                .fechaVencimientoLote(fechaVencimientoLote)
+                .loteVencido(fechaVencimientoLote != null && fechaVencimientoLote.isBefore(java.time.LocalDate.now()))
                 .build();
     }
 }
