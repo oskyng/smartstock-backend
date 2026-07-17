@@ -1,11 +1,14 @@
 package com.osanzana.smartstock.bff.web;
 
 import com.osanzana.smartstock.bff.clients.SmartStockClient;
+import com.osanzana.smartstock.bff.dto.CambiarContrasenaRequestDTO;
 import com.osanzana.smartstock.bff.dto.ComercioRequestDTO;
 import com.osanzana.smartstock.bff.dto.ComercioResponseDTO;
 import com.osanzana.smartstock.bff.dto.LoginRequestDTO;
 import com.osanzana.smartstock.bff.dto.LoginResponseDTO;
+import com.osanzana.smartstock.bff.dto.LoteResponseDTO;
 import com.osanzana.smartstock.bff.dto.ProductoResponseDTO;
+import com.osanzana.smartstock.bff.dto.ReglaDepreciacionResponseDTO;
 import com.osanzana.smartstock.bff.dto.UsuarioCreateResponseDTO;
 import com.osanzana.smartstock.bff.dto.UsuarioRequestDTO;
 import com.osanzana.smartstock.bff.dto.UsuarioResponseDTO;
@@ -16,14 +19,21 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.util.ReflectionTestUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
@@ -40,7 +50,10 @@ class BffControllerTest {
     private BffController bffController;
 
     @Test
-    void login_Success() {
+    void login_Success_SetsHttpOnlyCookieAndStripsTokenFromBody() {
+        ReflectionTestUtils.setField(bffController, "jwtExpirationMs", 86_400_000L);
+        ReflectionTestUtils.setField(bffController, "cookieSecure", false);
+
         LoginRequestDTO loginRequest = LoginRequestDTO.builder()
                 .email("test@test.com")
                 .password("pass")
@@ -49,12 +62,40 @@ class BffControllerTest {
                 .token("jwt")
                 .email("test@test.com")
                 .rol("ADMIN")
+                .idComercio(1L)
                 .build();
         when(client.login(any(LoginRequestDTO.class))).thenReturn(Mono.just(loginResponse));
 
-        StepVerifier.create(bffController.login(loginRequest))
-                .expectNext(loginResponse)
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        StepVerifier.create(bffController.login(loginRequest, response))
+                .assertNext(body -> {
+                    assertNull(body.getToken());
+                    assertEquals("test@test.com", body.getEmail());
+                    assertEquals("ADMIN", body.getRol());
+                    assertEquals(1L, body.getIdComercio());
+                })
                 .verifyComplete();
+
+        String setCookie = response.getHeader("Set-Cookie");
+        assertNotNull(setCookie);
+        assertTrue(setCookie.contains("ss_token=jwt"));
+        assertTrue(setCookie.contains("HttpOnly"));
+        assertTrue(setCookie.contains("SameSite=Strict"));
+    }
+
+    @Test
+    void logout_Success_ClearsCookie() {
+        ReflectionTestUtils.setField(bffController, "cookieSecure", false);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        var result = bffController.logout(response);
+
+        assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
+        String setCookie = response.getHeader("Set-Cookie");
+        assertNotNull(setCookie);
+        assertTrue(setCookie.contains("ss_token="));
+        assertTrue(setCookie.contains("Max-Age=0"));
     }
 
     @Test
@@ -76,6 +117,31 @@ class BffControllerTest {
 
         StepVerifier.create(bffController.crearUsuario(1L, usuarioRequest))
                 .expectNext(expected)
+                .verifyComplete();
+    }
+
+    @Test
+    void reactivarUsuario_Success() {
+        UsuarioResponseDTO expected = UsuarioResponseDTO.builder().id(5L).activo(1).build();
+        when(client.reactivarUsuario(5L, 1L)).thenReturn(Mono.just(expected));
+
+        StepVerifier.create(bffController.reactivarUsuario(5L, 1L))
+                .assertNext(response -> {
+                    assertEquals(HttpStatus.OK, response.getStatusCode());
+                    assertEquals(expected, response.getBody());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void cambiarContrasenaUsuario_Success() {
+        CambiarContrasenaRequestDTO request = CambiarContrasenaRequestDTO.builder()
+                .nuevaContrasena("claveNueva123")
+                .build();
+        when(client.cambiarContrasenaUsuario(5L, 1L, request)).thenReturn(Mono.empty());
+
+        StepVerifier.create(bffController.cambiarContrasenaUsuario(5L, 1L, request))
+                .assertNext(response -> assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode()))
                 .verifyComplete();
     }
 
@@ -111,7 +177,7 @@ class BffControllerTest {
     @Test
     void getDashboard_Success() {
         when(client.listarProductos(anyLong())).thenReturn(Mono.just(Collections.emptyList()));
-        when(client.listarLotes(anyLong())).thenReturn(Mono.just(Collections.emptyList()));
+        when(client.listarLotesInterno(anyLong())).thenReturn(Mono.just(Collections.emptyList()));
         when(client.listarAlertas(anyLong())).thenReturn(Mono.just(Collections.emptyList()));
         when(client.listarReglas(anyLong())).thenReturn(Mono.just(Collections.emptyList()));
 
@@ -121,7 +187,40 @@ class BffControllerTest {
                     assertEquals(Collections.emptyList(), dashboard.getLotesRecientes());
                     assertEquals(Collections.emptyList(), dashboard.getAlertasPendientes());
                     assertEquals(Collections.emptyList(), dashboard.getReglasActivas());
+                    assertEquals(BigDecimal.ZERO, dashboard.getCapitalEnRiesgo());
                 })
+                .verifyComplete();
+    }
+
+    @Test
+    void getDashboard_CalculaCapitalEnRiesgoSoloParaLotesEnRiesgo() {
+        LoteResponseDTO loteEnRiesgo = LoteResponseDTO.builder()
+                .id(1L)
+                .nombreCategoria("Lácteos")
+                .cantidadActual(10)
+                .costoUnitario(new BigDecimal("500"))
+                .fechaVencimiento(LocalDate.now().plusDays(2))
+                .build();
+        LoteResponseDTO loteFueraDeRiesgo = LoteResponseDTO.builder()
+                .id(2L)
+                .nombreCategoria("Lácteos")
+                .cantidadActual(20)
+                .costoUnitario(new BigDecimal("300"))
+                .fechaVencimiento(LocalDate.now().plusDays(30))
+                .build();
+        ReglaDepreciacionResponseDTO regla = ReglaDepreciacionResponseDTO.builder()
+                .nombreCategoria("Lácteos")
+                .diasCriticosMin(5)
+                .activa(1)
+                .build();
+
+        when(client.listarProductos(anyLong())).thenReturn(Mono.just(Collections.emptyList()));
+        when(client.listarLotesInterno(anyLong())).thenReturn(Mono.just(List.of(loteEnRiesgo, loteFueraDeRiesgo)));
+        when(client.listarAlertas(anyLong())).thenReturn(Mono.just(Collections.emptyList()));
+        when(client.listarReglas(anyLong())).thenReturn(Mono.just(List.of(regla)));
+
+        StepVerifier.create(bffController.getDashboard(1L))
+                .assertNext(dashboard -> assertEquals(new BigDecimal("5000"), dashboard.getCapitalEnRiesgo()))
                 .verifyComplete();
     }
 
@@ -158,9 +257,9 @@ class BffControllerTest {
         org.springframework.http.codec.ServerSentEvent<com.osanzana.smartstock.bff.dto.AlertaEscaladaEvent> sse =
                 org.springframework.http.codec.ServerSentEvent.builder(event).build();
 
-        when(auditStreamService.getAuditStream()).thenReturn(Flux.just(sse));
+        when(auditStreamService.getAuditStream(1L)).thenReturn(Flux.just(sse));
 
-        StepVerifier.create(bffController.getAuditStream())
+        StepVerifier.create(bffController.getAuditStream(1L))
                 .expectNext(sse)
                 .verifyComplete();
     }

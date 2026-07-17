@@ -34,11 +34,12 @@ public class AuditStreamService {
      * Los comentarios SSE (":heartbeat") no llevan "data:", así que el cliente los ignora sin
      * tratarlos como eventos de negocio.
      */
-    public Flux<ServerSentEvent<AlertaEscaladaEvent>> getAuditStream() {
+    public Flux<ServerSentEvent<AlertaEscaladaEvent>> getAuditStream(Long comercioId) {
         Flux<ServerSentEvent<AlertaEscaladaEvent>> heartbeat = Flux.interval(Duration.ZERO, Duration.ofSeconds(15))
                 .map(tick -> ServerSentEvent.<AlertaEscaladaEvent>builder().comment("heartbeat").build());
 
         Flux<ServerSentEvent<AlertaEscaladaEvent>> eventos = sink.asFlux()
+                .filter(evento -> evento.getComercioId() != null && evento.getComercioId().equals(comercioId))
                 .map(evento -> ServerSentEvent.builder(evento).build());
 
         return Flux.merge(heartbeat, eventos);
