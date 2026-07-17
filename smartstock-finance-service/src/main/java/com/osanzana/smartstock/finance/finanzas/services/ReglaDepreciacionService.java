@@ -57,8 +57,9 @@ public class ReglaDepreciacionService {
     }
 
     @Transactional
-    public void eliminar(Long id) {
+    public void eliminar(Long id, Long comercioId) {
         ReglaDepreciacion regla = reglaRepository.findById(id)
+                .filter(r -> r.getComercio().getId().equals(comercioId))
                 .orElseThrow(() -> new ResourceNotFoundException("Regla no encontrada"));
         reglaRepository.delete(regla);
     }

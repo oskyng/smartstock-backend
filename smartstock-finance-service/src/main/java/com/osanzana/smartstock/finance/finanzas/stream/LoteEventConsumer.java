@@ -39,7 +39,7 @@ public class LoteEventConsumer {
                 log.info("Procesamiento completado: No se requiere acción adicional para el lote {}", lote.getId());
             }
         } catch (Exception e) {
-            log.error("Error al procesar el precio dinámico del lote {}: {}", lote.getId(), e.getMessage());
+            log.error("Error al procesar el precio dinámico del lote {}", lote.getId(), e);
             // En un entorno productivo, aquí se podría enviar a un Dead Letter Topic
         }
     }

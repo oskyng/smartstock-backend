@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +27,7 @@ public class ReglaDepreciacionController {
 
     @Operation(summary = "Listar todas las reglas del comercio")
     @GetMapping
+    @PreAuthorize("hasAnyRole('GERENTE_TIENDA', 'ADMIN_SISTEMA')")
     public ResponseEntity<List<ReglaDepreciacionResponseDTO>> listar(
             @RequestHeader("X-Comercio-ID") Long comercioId) {
         return ResponseEntity.ok(reglaService.listarPorComercio(comercioId));
@@ -33,6 +35,7 @@ public class ReglaDepreciacionController {
 
     @Operation(summary = "Crear nueva regla")
     @PostMapping
+    @PreAuthorize("hasRole('GERENTE_TIENDA')")
     public ResponseEntity<ReglaDepreciacionResponseDTO> crear(
             @Valid @RequestBody ReglaDepreciacionRequestDTO dto,
             @RequestHeader("X-Comercio-ID") Long comercioId,
@@ -43,8 +46,11 @@ public class ReglaDepreciacionController {
 
     @Operation(summary = "Eliminar regla")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        reglaService.eliminar(id);
+    @PreAuthorize("hasRole('GERENTE_TIENDA')")
+    public ResponseEntity<Void> eliminar(
+            @PathVariable Long id,
+            @RequestHeader("X-Comercio-ID") Long comercioId) {
+        reglaService.eliminar(id, comercioId);
         return ResponseEntity.noContent().build();
     }
 }
