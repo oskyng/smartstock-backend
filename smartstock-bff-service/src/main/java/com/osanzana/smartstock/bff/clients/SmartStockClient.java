@@ -2,6 +2,7 @@ package com.osanzana.smartstock.bff.clients;
 
 import com.osanzana.smartstock.bff.dto.AlertaAuditoriaResponseDTO;
 import com.osanzana.smartstock.bff.dto.AlertaResponseDTO;
+import com.osanzana.smartstock.bff.dto.CambiarContrasenaRequestDTO;
 import com.osanzana.smartstock.bff.dto.CategoriaRequestDTO;
 import com.osanzana.smartstock.bff.dto.CategoriaResponseDTO;
 import com.osanzana.smartstock.bff.dto.ComercioRequestDTO;
@@ -21,6 +22,7 @@ import com.osanzana.smartstock.bff.dto.UsuarioCreateResponseDTO;
 import com.osanzana.smartstock.bff.dto.UsuarioRequestDTO;
 import com.osanzana.smartstock.bff.dto.UsuarioResponseDTO;
 import com.osanzana.smartstock.bff.dto.UsuarioUpdateRequestDTO;
+import com.osanzana.smartstock.bff.security.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
@@ -38,6 +40,7 @@ public class SmartStockClient {
     private final WebClient inventoryWebClient;
     private final WebClient financeWebClient;
     private final WebClient alertWebClient;
+    private final JwtUtils jwtUtils;
 
     // Métodos para Auth
     public Mono<LoginResponseDTO> login(LoginRequestDTO loginRequest) {
@@ -79,6 +82,23 @@ public class SmartStockClient {
         return authWebClient.delete()
                 .uri("/api/v1/usuarios/{id}", id)
                 .header("X-Comercio-ID", comercioId != null ? String.valueOf(comercioId) : "")
+                .retrieve()
+                .bodyToMono(Void.class);
+    }
+
+    public Mono<UsuarioResponseDTO> reactivarUsuario(Long id, Long comercioId) {
+        return authWebClient.patch()
+                .uri("/api/v1/usuarios/{id}/reactivar", id)
+                .header("X-Comercio-ID", comercioId != null ? String.valueOf(comercioId) : "")
+                .retrieve()
+                .bodyToMono(UsuarioResponseDTO.class);
+    }
+
+    public Mono<Void> cambiarContrasenaUsuario(Long id, Long comercioId, CambiarContrasenaRequestDTO request) {
+        return authWebClient.patch()
+                .uri("/api/v1/usuarios/{id}/password", id)
+                .header("X-Comercio-ID", comercioId != null ? String.valueOf(comercioId) : "")
+                .bodyValue(request)
                 .retrieve()
                 .bodyToMono(Void.class);
     }
@@ -191,6 +211,21 @@ public class SmartStockClient {
     public Mono<List<LoteResponseDTO>> listarLotes(Long comercioId) {
         return inventoryWebClient.get()
                 .uri("/api/v1/inventario/lotes")
+                .header("X-Comercio-ID", String.valueOf(comercioId))
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<LoteResponseDTO>>() {});
+    }
+
+    /**
+     * Variante de listarLotes() para uso exclusivamente interno (cálculo de Capital en Riesgo
+     * en getDashboard()): usa un token de servicio propio en vez de reenviar el JWT del usuario,
+     * para que inventory-service pueda distinguir esta llamada de una humana y sí incluir
+     * costoUnitario en la respuesta (dato que ningún rol de usuario debe poder leer directamente).
+     */
+    public Mono<List<LoteResponseDTO>> listarLotesInterno(Long comercioId) {
+        return inventoryWebClient.get()
+                .uri("/api/v1/inventario/lotes")
+                .header("Authorization", "Bearer " + jwtUtils.generarTokenServicioInterno())
                 .header("X-Comercio-ID", String.valueOf(comercioId))
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<List<LoteResponseDTO>>() {});
