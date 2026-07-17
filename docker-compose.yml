@@ -125,3 +125,10 @@ services:
       - SMARTSTOCK_JWT_SECRET=${SMARTSTOCK_JWT_SECRET}
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - SMARTSTOCK_ALLOWED_ORIGINS=${SMARTSTOCK_ALLOWED_ORIGINS:-http://localhost:4200}
+
+  frontend:
+    image: oskyng/smartstock-frontend:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - bff-service
