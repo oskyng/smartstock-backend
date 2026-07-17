@@ -3,11 +3,13 @@ package com.osanzana.smartstock.auth.autenticacion.web;
 import com.osanzana.smartstock.auth.autenticacion.services.UsuarioService;
 import com.osanzana.smartstock.auth.core.entities.Usuario;
 import com.osanzana.smartstock.auth.core.repositories.UsuarioRepository;
+import com.osanzana.smartstock.auth.shared.dto.request.CambiarContrasenaRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioCreateRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioUpdateRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.response.UsuarioResponseDTO;
 import com.osanzana.smartstock.auth.shared.exception.ResourceNotFoundException;
+import com.osanzana.smartstock.auth.shared.exception.UnauthorizedActionException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -83,7 +85,7 @@ public class UsuarioController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Desactivar un usuario", description = "Borrado lógico (activo=0). ADMIN_SISTEMA puede desactivar cualquier usuario; GERENTE_TIENDA solo usuarios OPERADOR_INVENTARIO/REPONEDOR_SALA de su propio comercio.")
+    @Operation(summary = "Suspender un usuario", description = "Borrado lógico (activo=0), reversible con /reactivar. ADMIN_SISTEMA puede suspender cualquier usuario; GERENTE_TIENDA solo usuarios OPERADOR_INVENTARIO/REPONEDOR_SALA de su propio comercio.")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Void> eliminarUsuario(
             @PathVariable Long id,
@@ -95,8 +97,37 @@ public class UsuarioController {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/{id}/reactivar")
+    @Operation(summary = "Reactivar un usuario suspendido", description = "Revierte la suspensión (activo=1). Mismo alcance que suspender.")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<UsuarioResponseDTO> reactivarUsuario(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Comercio-ID", required = false) Long comercioHeader,
+            Authentication authParam) {
+
+        ContextoSolicitante contexto = resolverContexto(authParam, comercioHeader);
+        return ResponseEntity.ok(usuarioService.reactivar(id, contexto.idComercioOperacion, contexto.rolSolicitante));
+    }
+
+    @PatchMapping("/{id}/password")
+    @Operation(summary = "Restablecer la contraseña de un usuario", description = "Acción administrativa: no requiere la contraseña anterior. Mismo alcance que suspender/editar.")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<Void> cambiarContrasena(
+            @PathVariable Long id,
+            @Valid @RequestBody CambiarContrasenaRequestDTO request,
+            @RequestHeader(value = "X-Comercio-ID", required = false) Long comercioHeader,
+            Authentication authParam) {
+
+        ContextoSolicitante contexto = resolverContexto(authParam, comercioHeader);
+        usuarioService.cambiarContrasena(id, request, contexto.idComercioOperacion, contexto.rolSolicitante);
+        return ResponseEntity.noContent().build();
+    }
+
     private ContextoSolicitante resolverContexto(Authentication authParam, Long comercioHeader) {
-        String emailSolicitante = (authParam != null) ? authParam.getName() : "admin@test.cl";
+        if (authParam == null) {
+            throw new UnauthorizedActionException("No se pudo resolver la identidad del solicitante.");
+        }
+        String emailSolicitante = authParam.getName();
         Usuario solicitante = usuarioRepository.findByEmail(emailSolicitante)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario solicitante no encontrado."));
 

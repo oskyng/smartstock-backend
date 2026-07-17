@@ -6,6 +6,7 @@ import com.osanzana.smartstock.auth.core.entities.Usuario;
 import com.osanzana.smartstock.auth.core.repositories.ComercioRepository;
 import com.osanzana.smartstock.auth.core.repositories.RolRepository;
 import com.osanzana.smartstock.auth.core.repositories.UsuarioRepository;
+import com.osanzana.smartstock.auth.shared.dto.request.CambiarContrasenaRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioCreateRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioRequestDTO;
 import com.osanzana.smartstock.auth.shared.dto.request.UsuarioUpdateRequestDTO;
@@ -30,8 +31,16 @@ public class UsuarioService {
     private final ComercioRepository comercioRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * Endpoint de bootstrap, público por diseño: solo puede usarse mientras no exista ningún
+     * ADMIN_SISTEMA en el sistema. Una vez creado el primer admin, queda permanentemente
+     * deshabilitado para evitar que cualquiera cree cuentas administrativas sin autenticarse.
+     */
     @Transactional
     public UsuarioResponseDTO crearAdminSistema(UsuarioCreateRequestDTO request) {
+        if (usuarioRepository.existsByRolNombre("ADMIN_SISTEMA")) {
+            throw new UnauthorizedActionException("Ya existe un administrador del sistema; este endpoint de inicialización está deshabilitado.");
+        }
         validarUnicidad(request.getEmail(), request.getRut());
 
         Rol rol = rolRepository.findByNombre("ADMIN_SISTEMA")
@@ -115,6 +124,34 @@ public class UsuarioService {
         validarAlcance(usuario, idComercioContexto, rolSolicitante);
 
         usuario.setActivo(0);
+        usuarioRepository.save(usuario);
+    }
+
+    /** Reactiva a un usuario previamente suspendido (activo=0 -> 1), sin borrar su historial. */
+    @Transactional
+    public UsuarioResponseDTO reactivar(Long id, Long idComercioContexto, String rolSolicitante) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        validarAlcance(usuario, idComercioContexto, rolSolicitante);
+
+        usuario.setActivo(1);
+        Usuario actualizado = usuarioRepository.save(usuario);
+        return mapToResponse(actualizado);
+    }
+
+    /**
+     * Restablece la contraseña de un operario sin requerir la anterior (acción administrativa del
+     * ADMIN_SISTEMA/GERENTE_TIENDA, distinta del flujo de recuperación autoservicio por correo).
+     */
+    @Transactional
+    public void cambiarContrasena(Long id, CambiarContrasenaRequestDTO request, Long idComercioContexto, String rolSolicitante) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        validarAlcance(usuario, idComercioContexto, rolSolicitante);
+
+        usuario.setPasswordHash(passwordEncoder.encode(request.getNuevaContrasena()));
         usuarioRepository.save(usuario);
     }
 
