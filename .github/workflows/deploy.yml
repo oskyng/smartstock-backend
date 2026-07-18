@@ -96,17 +96,90 @@ jobs:
           target: ${{ secrets.DEPLOY_PATH }}
           strip_components: 0
 
-      - name: Pull y recrear los servicios modificados
+      - name: Pull, recrear, health-check y rollback automático si falla
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
-            set -e
+            set +e
             cd "${{ secrets.DEPLOY_PATH }}"
+
+            # Bootstrap: crea cualquier servicio que no exista todavía (p.ej. el EC2 se reseteó
+            # y quedó vacío). No reinicia los que ya están sanos, así que es seguro correrlo
+            # siempre, no solo la primera vez.
+            docker compose up -d
+
             SERVICES="${{ join(fromJson(needs.changes.outputs.services), ' ') }}"
             echo "Servicios a redesplegar: $SERVICES"
+
+            port_for() {
+              case "$1" in
+                auth-service) echo 8081 ;;
+                inventory-service) echo 8082 ;;
+                finance-service) echo 8083 ;;
+                alert-service) echo 8084 ;;
+                commerce-service) echo 8085 ;;
+                bff-service) echo 8080 ;;
+              esac
+            }
+
+            # Guarda, por servicio, el image ID que estaba corriendo ANTES del pull, para poder
+            # revertir a él si el nuevo no queda saludable. Si el servicio no existía todavía
+            # (primer deploy en un EC2 recién bootstrapeado), no queda registro y no hay a qué
+            # volver.
+            OLD_IMAGES_FILE=$(mktemp)
+            for s in $SERVICES; do
+              cid=$(docker compose ps -q "$s")
+              if [ -n "$cid" ]; then
+                img=$(docker inspect --format='{{.Image}}' "$cid")
+                echo "$s $img" >> "$OLD_IMAGES_FILE"
+              fi
+            done
+
             docker compose pull $SERVICES
             docker compose up -d --no-deps --force-recreate $SERVICES
+
+            FAILED=""
+            for s in $SERVICES; do
+              port=$(port_for "$s")
+              ok=0
+              code="000"
+              for i in $(seq 1 20); do
+                sleep 5
+                code=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:${port}/actuator/health")
+                if [ "$code" = "200" ]; then
+                  ok=1
+                  break
+                fi
+              done
+              if [ "$ok" = "1" ]; then
+                echo "OK: $s saludable"
+              else
+                echo "FALLO: $s no respondió saludable tras el deploy (último código HTTP: $code)"
+                FAILED="$FAILED $s"
+              fi
+            done
+
+            if [ -n "$FAILED" ]; then
+              echo "Iniciando rollback automático de:$FAILED"
+              for s in $FAILED; do
+                old=$(grep "^$s " "$OLD_IMAGES_FILE" | awk '{print $2}')
+                if [ -n "$old" ]; then
+                  docker tag "$old" "oskyng/smartstock-$s:latest"
+                  docker compose up -d --no-deps --force-recreate "$s"
+                  echo "Revertido: $s -> $old"
+                else
+                  echo "Sin imagen previa registrada para $s: no se puede revertir automáticamente, revisar manualmente."
+                fi
+              done
+            fi
+
+            rm -f "$OLD_IMAGES_FILE"
             docker image prune -f
+
+            if [ -n "$FAILED" ]; then
+              echo "Deploy con fallas en:$FAILED (revertido cuando fue posible)"
+              exit 1
+            fi
