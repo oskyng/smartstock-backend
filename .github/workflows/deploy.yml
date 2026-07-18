@@ -105,6 +105,12 @@ jobs:
           script: |
             set -e
             cd "${{ secrets.DEPLOY_PATH }}"
+
+            # Bootstrap: crea cualquier servicio que no exista todavía (p.ej. el EC2 se reseteó
+            # y quedó vacío). No reinicia los que ya están sanos, así que es seguro correrlo
+            # siempre, no solo la primera vez.
+            docker compose up -d
+
             SERVICES="${{ join(fromJson(needs.changes.outputs.services), ' ') }}"
             echo "Servicios a redesplegar: $SERVICES"
             docker compose pull $SERVICES
