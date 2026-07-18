@@ -50,7 +50,8 @@ public class SecurityConfig {
                                 "/api/v1/bff/auth/logout",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html"
+                                "/swagger-ui.html",
+                                "/actuator/**"
                         ).permitAll()
 
                         // B. [ADMIN_SISTEMA] - Gestión global de comercios (Commerce Service)
